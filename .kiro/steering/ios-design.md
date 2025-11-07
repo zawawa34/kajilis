@@ -1751,9 +1751,429 @@ Dynamic Typeとアクセシビリティ対応を実装する際のチェック�
 Dynamic TypeとアクセシビリティサポートはKajilisの重要な設計原則です。すべてのテキスト要素でDynamic Typeを考慮し、アクセシビリティサイズでも快適に利用できるレイアウトを実現します。
 
 **次のステップ**:
-- SwiftUIタイポグラフィ実装ガイドの作成（タスク3.3）
 - スペーシングシステムの定義
 - コンポーネントライブラリでのDynamic Type対応
+
+### SwiftUI実装ガイド
+
+このセクションでは、Kajilisタイポグラフィシステムを実際のSwiftUIプロジェクトに実装する手順を説明します。
+
+#### ステップ1: 基本的なテキストスタイルの使用
+
+SwiftUIでは、`.font()`修飾子を使ってテキストスタイルを適用します。
+
+**基本的な使用例**:
+```swift
+import SwiftUI
+
+struct TaskListView: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Large Title: 画面タイトル
+            Text("タスク管理")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+
+            // Title 2: セクションタイトル
+            Text("今日のタスク")
+                .font(.title2)
+
+            // Body: 説明文
+            Text("今日中に完了すべきタスクが3件あります。")
+                .font(.body)
+                .foregroundStyle(.secondary)
+        }
+        .padding()
+    }
+}
+```
+
+#### ステップ2: タスクリストアイテムでの階層表現
+
+リストアイテムでは、複数のテキストスタイルを組み合わせて情報の階層を表現します。
+
+**実装例**:
+```swift
+struct TaskRowView: View {
+    let task: Task
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            // Headline: タスク名（メインテキスト）
+            Text(task.name)
+                .font(.headline)
+
+            // Subheadline: タスク詳細（サブテキスト）
+            if let detail = task.detail {
+                Text(detail)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            // Caption: メタ情報
+            HStack(spacing: 8) {
+                if let dueDate = task.dueDate {
+                    Label(dueDate.formatted(date: .abbreviated, time: .omitted),
+                          systemImage: "calendar")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                if task.isDueSoon {
+                    Text("期限接近")
+                        .font(.caption)
+                        .foregroundStyle(.warningColor)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(.warningColor.opacity(0.1))
+                        .cornerRadius(4)
+                }
+            }
+        }
+        .padding()
+        .background(.backgroundSecondary)
+        .cornerRadius(12)
+    }
+}
+```
+
+#### ステップ3: フォントウェイトの調整
+
+`.fontWeight()`修飾子で強調度を調整できます。
+
+**ウェイトの使い分け**:
+```swift
+VStack(alignment: .leading, spacing: 8) {
+    // Regular (デフォルト)
+    Text("通常のテキスト")
+        .font(.body)
+
+    // Semibold: 重要な情報
+    Text("重要なお知らせ")
+        .font(.body)
+        .fontWeight(.semibold)
+
+    // Bold: 非常に重要な情報
+    Text("必須項目")
+        .font(.body)
+        .fontWeight(.bold)
+}
+```
+
+**使用可能なフォントウェイト**:
+- `.ultraLight` (100)
+- `.thin` (200)
+- `.light` (300)
+- `.regular` (400) - デフォルト
+- `.medium` (500)
+- `.semibold` (600) - 推奨: 強調表示
+- `.bold` (700) - 推奨: 非常に重要な情報
+- `.heavy` (800)
+- `.black` (900)
+
+#### ステップ4: 日本語テキストの最適化
+
+日本語テキストでは、行間やテキスト配置を調整します。
+
+**日本語テキストの推奨設定**:
+```swift
+struct DescriptionView: View {
+    let description: String
+
+    var body: some View {
+        Text(description)
+            .font(.body)
+            .lineSpacing(4)                    // 日本語用の行間
+            .multilineTextAlignment(.leading)  // 左揃え
+            .lineLimit(nil)                    // 折り返し無制限
+    }
+}
+
+// 使用例
+DescriptionView(description: """
+    家族みんなで使えるタスク管理アプリです。
+    買い物リストや献立を共有できます。
+    """)
+```
+
+**長い見出しの場合**:
+```swift
+Text("タスク管理アプリケーション")
+    .font(.largeTitle)
+    .fontWeight(.bold)
+    .kerning(1.5)                     // 文字間を広げる
+    .multilineTextAlignment(.center)  // 中央揃え
+```
+
+#### ステップ5: Dynamic Type対応の実装
+
+SwiftUIの標準テキストスタイルは自動的にDynamic Typeに対応します。
+
+**基本的な実装**:
+```swift
+struct ContentView: View {
+    var body: some View {
+        VStack(spacing: 16) {
+            // ✅ Dynamic Type自動対応
+            Text("タスク一覧")
+                .font(.largeTitle)
+
+            Text("家族みんなで共有できるタスク管理アプリです。")
+                .font(.body)
+        }
+    }
+}
+```
+
+**アクセシビリティサイズへの対応**:
+```swift
+struct TaskRowView: View {
+    @Environment(\.dynamicTypeSize) var dynamicTypeSize
+    let task: Task
+
+    var body: some View {
+        Group {
+            if dynamicTypeSize >= .accessibility1 {
+                // アクセシビリティサイズでは垂直レイアウト
+                VStack(alignment: .leading, spacing: 8) {
+                    titleView
+                    detailView
+                }
+            } else {
+                // 標準サイズでは水平レイアウト
+                HStack {
+                    titleView
+                    Spacer()
+                    detailView
+                }
+            }
+        }
+        .padding()
+    }
+
+    var titleView: some View {
+        Text(task.name)
+            .font(.headline)
+    }
+
+    var detailView: some View {
+        Text(task.detail ?? "")
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+    }
+}
+```
+
+#### ステップ6: カスタムフォントでのDynamic Type対応
+
+カスタムフォント（例: ヒラギノ角ゴシック Pro W6）を使用する場合も、`relativeTo`パラメータでDynamic Typeをサポートできます。
+
+**実装例**:
+```swift
+// カスタムフォントでDynamic Typeをサポート
+Text("タスク名")
+    .font(.custom("HiraKakuProN-W6", size: 17, relativeTo: .body))
+    // relativeTo: .body を指定することで、bodyスタイルのスケーリングに追従
+
+// 見出しの場合
+Text("セクションタイトル")
+    .font(.custom("HiraKakuProN-W6", size: 22, relativeTo: .title2))
+```
+
+#### ステップ7: テキストスタイルの拡張を作成（オプション）
+
+プロジェクト固有のテキストスタイルを定義する場合、`Font`の拡張を作成できます。
+
+**Font+Extensions.swift**:
+```swift
+//
+//  Font+Extensions.swift
+//  kajilis
+//
+//  Kajilisデザインシステムのタイポグラフィ拡張
+//
+
+import SwiftUI
+
+extension Font {
+    // MARK: - カスタムスタイル
+
+    /// タスクカードのタイトルスタイル
+    static var taskCardTitle: Font {
+        .headline
+    }
+
+    /// タスクカードの詳細スタイル
+    static var taskCardDetail: Font {
+        .subheadline
+    }
+
+    /// バッジのラベルスタイル
+    static var badgeLabel: Font {
+        .caption
+    }
+
+    /// エラーメッセージスタイル
+    static var errorMessage: Font {
+        .callout
+    }
+}
+
+// 使用例
+struct TaskCardView: View {
+    let task: Task
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(task.name)
+                .font(.taskCardTitle)
+
+            if let detail = task.detail {
+                Text(detail)
+                    .font(.taskCardDetail)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+```
+
+#### ステップ8: SwiftUIプレビューでの確認
+
+SwiftUIプレビューで複数のテキストスタイルを確認できます。
+
+**プレビュー例**:
+```swift
+#Preview("Typography Styles") {
+    ScrollView {
+        VStack(alignment: .leading, spacing: 16) {
+            Group {
+                Text("Large Title")
+                    .font(.largeTitle)
+                Text("Title")
+                    .font(.title)
+                Text("Title 2")
+                    .font(.title2)
+                Text("Title 3")
+                    .font(.title3)
+                Text("Headline")
+                    .font(.headline)
+            }
+
+            Divider()
+
+            Group {
+                Text("Body")
+                    .font(.body)
+                Text("Callout")
+                    .font(.callout)
+                Text("Subheadline")
+                    .font(.subheadline)
+                Text("Footnote")
+                    .font(.footnote)
+                Text("Caption")
+                    .font(.caption)
+            }
+        }
+        .padding()
+    }
+}
+
+#Preview("Dynamic Type - Medium") {
+    TaskRowView(task: Task.sample)
+        .environment(\.dynamicTypeSize, .medium)
+}
+
+#Preview("Dynamic Type - Accessibility 3") {
+    TaskRowView(task: Task.sample)
+        .environment(\.dynamicTypeSize, .accessibility3)
+}
+```
+
+#### ステップ9: 実装のベストプラクティス
+
+**推奨パターン**:
+
+✅ **システムスタイルを優先**
+```swift
+Text("タスク一覧")
+    .font(.largeTitle)  // ✅ システム標準
+```
+
+✅ **意味的に正しいスタイルを選択**
+```swift
+VStack(alignment: .leading) {
+    Text("タスク名")
+        .font(.headline)      // ✅ メインテキスト
+    Text("詳細説明")
+        .font(.subheadline)   // ✅ セカンダリ情報
+    Text("作成日時")
+        .font(.caption)       // ✅ メタ情報
+}
+```
+
+✅ **日本語テキストに行間を設定**
+```swift
+Text("家族みんなで使えるタスク管理アプリです。")
+    .font(.body)
+    .lineSpacing(4)  // ✅ 日本語用の行間
+```
+
+✅ **Dynamic Typeを考慮したレイアウト**
+```swift
+@Environment(\.dynamicTypeSize) var dynamicTypeSize
+
+var body: some View {
+    if dynamicTypeSize >= .accessibility1 {
+        VStack { /* 垂直レイアウト */ }
+    } else {
+        HStack { /* 水平レイアウト */ }
+    }
+}
+```
+
+**避けるべきパターン**:
+
+❌ **固定フォントサイズの使用**
+```swift
+Text("タイトル")
+    .font(.system(size: 28))  // ❌ Dynamic Type非対応
+```
+
+❌ **カスタムフォントでrelativeToを省略**
+```swift
+Text("タイトル")
+    .font(.custom("HiraKakuProN-W6", size: 22))  // ❌ Dynamic Type非対応
+```
+
+❌ **重要な情報でlineLimit(1)を使用**
+```swift
+Text("タスクの重要な説明文")
+    .font(.body)
+    .lineLimit(1)  // ❌ アクセシビリティサイズで読めなくなる
+```
+
+#### 実装チェックリスト
+
+タイポグラフィ実装を完了する際のチェックリストです。
+
+- [ ] すべてのテキストでSwiftUIのシステムスタイル（`.font(.body)`など）を使用
+- [ ] カスタムフォントを使用する場合は`relativeTo`パラメータを指定
+- [ ] 日本語テキストに`.lineSpacing(4)`を設定
+- [ ] 階層構造を明確にするため、適切なテキストスタイルを選択
+- [ ] アクセシビリティサイズで全画面をテスト
+- [ ] SwiftUIプレビューで複数のDynamic Typeサイズを確認
+- [ ] 重要な情報を持つテキストで`.lineLimit()`を使用していない
+- [ ] Font拡張を作成する場合、内部でシステムスタイルを返すように実装
+
+#### まとめ
+
+SwiftUIのタイポグラフィシステムは、システム標準のテキストスタイルを使用することで、Dynamic Typeに自動的に対応します。Kajilisでは、これらの標準スタイルを活用し、日本語テキストに適した調整を加えることで、すべてのユーザーにとって読みやすいUIを実現します。
+
+**次のステップ**:
+- スペーシングシステムの実装
+- コンポーネントライブラリでのタイポグラフィ適用
+- 実際の画面実装でのタイポグラフィテスト
 
 ---
 
