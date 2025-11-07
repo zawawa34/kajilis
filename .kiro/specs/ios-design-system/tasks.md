@@ -73,7 +73,7 @@
   - _Requirements: 3.4, 3.5_
 
 - [ ] 5. コンポーネントライブラリを定義する
-- [ ] 5.1 ボタンコンポーネントの仕様を定義する
+- [x] 5.1 ボタンコンポーネントの仕様を定義する
   - primary、secondary、tertiary、destructiveのスタイルバリエーションを定義
   - default、hover、pressed、disabled、loadingの状態を明記
   - ボタンコンポーネントの用途とプロパティを記述

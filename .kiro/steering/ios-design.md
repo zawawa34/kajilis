@@ -3291,8 +3291,729 @@ VStack(spacing: 8) {
 
 ## コンポーネントライブラリ
 
-<!-- このセクションは今後のタスクで実装 -->
-詳細は今後の実装で追加されます。
+このセクションでは、Kajilisアプリで使用する再利用可能なUIコンポーネントの仕様を定義します。各コンポーネントは、用途、プロパティ、バリエーション、状態、実装例を含みます。
+
+### ボタンコンポーネント
+
+ボタンはユーザーのアクションをトリガーする重要なインタラクティブ要素です。Kajilisでは、4つのスタイルバリエーションと5つの状態を持つボタンコンポーネントを定義します。
+
+---
+
+#### ボタンの用途
+
+ボタンは以下の場面で使用されます：
+
+- **フォーム送信**: タスクの作成、編集、保存
+- **ナビゲーション**: 画面遷移、モーダル表示
+- **アクション実行**: タスクの完了、削除、共有
+- **選択肢の提示**: アラート、確認ダイアログ内の選択
+
+---
+
+#### スタイルバリエーション
+
+Kajilisでは、4つのボタンスタイルを定義します。各スタイルは、アクションの重要度と意図を視覚的に伝えます。
+
+##### 1. Primary Button（プライマリボタン）
+
+**用途**: 画面内で最も重要なアクション
+
+**視覚的特徴**:
+- 背景色: `accentColor`（通常はブルー）
+- テキスト色: 白（`.white`）
+- 角丸: 8pt
+- パディング: 水平24pt、垂直12pt
+- フォント: `.body` + `.fontWeight(.semibold)`
+
+**使用例**:
+- 「保存」ボタン
+- 「タスクを作成」ボタン
+- 「送信」ボタン
+
+**SwiftUIコード例**:
+
+```swift
+// Components/Buttons/PrimaryButton.swift
+import SwiftUI
+
+struct PrimaryButton: View {
+    let title: String
+    let action: () -> Void
+    var isLoading: Bool = false
+    var isDisabled: Bool = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                if isLoading {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .scaleEffect(0.8)
+                }
+                Text(title)
+                    .font(.body)
+                    .fontWeight(.semibold)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 12)
+            .background(isDisabled ? Color.gray.opacity(0.3) : Color.accentColor)
+            .foregroundStyle(.white)
+            .cornerRadius(8)
+        }
+        .disabled(isDisabled || isLoading)
+        .opacity(isDisabled ? 0.6 : 1.0)
+    }
+}
+
+// 使用例
+PrimaryButton(title: "タスクを保存") {
+    saveTask()
+}
+
+// ローディング状態
+PrimaryButton(title: "保存中...", isLoading: true) {
+    // アクションは無効化される
+}
+
+// 無効化状態
+PrimaryButton(title: "保存", isDisabled: true) {
+    // アクションは無効化される
+}
+```
+
+---
+
+##### 2. Secondary Button（セカンダリボタン）
+
+**用途**: プライマリアクションをサポートする、やや重要度の低いアクション
+
+**視覚的特徴**:
+- 背景色: `.secondarySystemBackground`（ライトモード: 薄いグレー、ダークモード: 濃いグレー）
+- テキスト色: `.primary`（システムのデフォルトテキスト色）
+- 角丸: 8pt
+- パディング: 水平24pt、垂直12pt
+- フォント: `.body` + `.fontWeight(.medium)`
+
+**使用例**:
+- 「キャンセル」ボタン
+- 「後で」ボタン
+- 「編集」ボタン
+
+**SwiftUIコード例**:
+
+```swift
+// Components/Buttons/SecondaryButton.swift
+import SwiftUI
+
+struct SecondaryButton: View {
+    let title: String
+    let action: () -> Void
+    var isLoading: Bool = false
+    var isDisabled: Bool = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                if isLoading {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .primary))
+                        .scaleEffect(0.8)
+                }
+                Text(title)
+                    .font(.body)
+                    .fontWeight(.medium)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 12)
+            .background(Color(.secondarySystemBackground))
+            .foregroundStyle(.primary)
+            .cornerRadius(8)
+        }
+        .disabled(isDisabled || isLoading)
+        .opacity(isDisabled ? 0.6 : 1.0)
+    }
+}
+
+// 使用例
+SecondaryButton(title: "キャンセル") {
+    dismissView()
+}
+```
+
+---
+
+##### 3. Tertiary Button（ターシャリボタン）
+
+**用途**: 補助的なアクション、テキストリンクのような軽いアクション
+
+**視覚的特徴**:
+- 背景色: 透明（`.clear`）
+- テキスト色: `.accentColor`
+- 角丸: なし（または4pt）
+- パディング: 水平16pt、垂直8pt
+- フォント: `.body` + `.fontWeight(.regular)`
+- 下線: オプション
+
+**使用例**:
+- 「詳細を表示」リンク
+- 「スキップ」ボタン
+- 「もっと見る」ボタン
+
+**SwiftUIコード例**:
+
+```swift
+// Components/Buttons/TertiaryButton.swift
+import SwiftUI
+
+struct TertiaryButton: View {
+    let title: String
+    let action: () -> Void
+    var isLoading: Bool = false
+    var isDisabled: Bool = false
+    var showUnderline: Bool = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                if isLoading {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .accentColor))
+                        .scaleEffect(0.7)
+                }
+                Text(title)
+                    .font(.body)
+                    .fontWeight(.regular)
+                    .underline(showUnderline)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .foregroundStyle(isDisabled ? .secondary : .accentColor)
+        }
+        .disabled(isDisabled || isLoading)
+        .opacity(isDisabled ? 0.6 : 1.0)
+    }
+}
+
+// 使用例
+TertiaryButton(title: "詳細を表示") {
+    showDetail()
+}
+
+// 下線付き
+TertiaryButton(title: "詳細を表示", showUnderline: true) {
+    showDetail()
+}
+```
+
+---
+
+##### 4. Destructive Button（デストラクティブボタン）
+
+**用途**: 削除や取り消しなど、破壊的なアクション
+
+**視覚的特徴**:
+- 背景色: `.red`（または`Color(.systemRed)`）
+- テキスト色: 白（`.white`）
+- 角丸: 8pt
+- パディング: 水平24pt、垂直12pt
+- フォント: `.body` + `.fontWeight(.semibold)`
+
+**使用例**:
+- 「削除」ボタン
+- 「アカウントを削除」ボタン
+- 「取り消し」ボタン（重要なアクション）
+
+**SwiftUIコード例**:
+
+```swift
+// Components/Buttons/DestructiveButton.swift
+import SwiftUI
+
+struct DestructiveButton: View {
+    let title: String
+    let action: () -> Void
+    var isLoading: Bool = false
+    var isDisabled: Bool = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                if isLoading {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .scaleEffect(0.8)
+                }
+                Text(title)
+                    .font(.body)
+                    .fontWeight(.semibold)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 12)
+            .background(isDisabled ? Color.gray.opacity(0.3) : Color.red)
+            .foregroundStyle(.white)
+            .cornerRadius(8)
+        }
+        .disabled(isDisabled || isLoading)
+        .opacity(isDisabled ? 0.6 : 1.0)
+    }
+}
+
+// 使用例
+DestructiveButton(title: "タスクを削除") {
+    deleteTask()
+}
+```
+
+---
+
+#### ボタンの状態
+
+各ボタンは以下の5つの状態を持ちます：
+
+##### 1. Default（デフォルト）
+
+**説明**: ボタンの通常状態。ユーザーがタップ可能。
+
+**視覚的特徴**:
+- 定義されたスタイルの通常の外観
+- 不透明度: 1.0
+- インタラクション: 有効
+
+**実装**:
+```swift
+PrimaryButton(title: "保存") {
+    saveTask()
+}
+```
+
+---
+
+##### 2. Hover（ホバー）
+
+**説明**: iPadOSやMacCatalystでマウスカーソルがボタン上にある状態。
+
+**視覚的特徴**:
+- 背景色がやや明るくなる（10%程度）
+- カーソル形状: ポインター
+
+**実装**:
+```swift
+Button(action: action) {
+    Text(title)
+        .padding()
+        .background(Color.accentColor)
+}
+#if os(iOS)
+.hoverEffect(.highlight)
+#endif
+```
+
+**注意**: iPhoneではhover状態はサポートされません。
+
+---
+
+##### 3. Pressed（プレス）
+
+**説明**: ユーザーがボタンをタップしている最中の状態。
+
+**視覚的特徴**:
+- スケール: 0.95倍に縮小
+- 不透明度: やや低下（0.8程度）
+- アニメーション: 0.1秒のスプリングアニメーション
+
+**実装**:
+```swift
+struct PrimaryButton: View {
+    @State private var isPressed = false
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .padding()
+                .background(Color.accentColor)
+                .foregroundStyle(.white)
+                .cornerRadius(8)
+        }
+        .scaleEffect(isPressed ? 0.95 : 1.0)
+        .opacity(isPressed ? 0.8 : 1.0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in isPressed = true }
+                .onEnded { _ in isPressed = false }
+        )
+    }
+}
+```
+
+**ベストプラクティス**: SwiftUIの`Button`は自動的にタップフィードバックを提供しますが、カスタムフィードバックが必要な場合は上記のようにジェスチャーを使用します。
+
+---
+
+##### 4. Disabled（無効）
+
+**説明**: ボタンが無効化されており、タップできない状態。
+
+**視覚的特徴**:
+- 不透明度: 0.6
+- 背景色: グレーアウト（または薄いグレー）
+- インタラクション: 無効
+
+**使用場面**:
+- フォームのバリデーションが通らない場合
+- 必須フィールドが未入力の場合
+- アクションが現在実行できない場合
+
+**実装**:
+```swift
+PrimaryButton(title: "保存", isDisabled: taskName.isEmpty) {
+    saveTask()
+}
+
+// または標準的なSwiftUIのdisabled
+Button("保存") {
+    saveTask()
+}
+.disabled(taskName.isEmpty)
+.opacity(taskName.isEmpty ? 0.6 : 1.0)
+```
+
+---
+
+##### 5. Loading（ローディング）
+
+**説明**: ボタンがアクションを実行中で、処理が完了するまで待機する状態。
+
+**視覚的特徴**:
+- インジケーター: `ProgressView`を表示
+- テキスト: 「保存中...」など、進行中を示すテキスト（オプション）
+- インタラクション: 無効（重複実行を防ぐ）
+
+**使用場面**:
+- サーバーへのデータ送信中
+- ファイルのアップロード中
+- 時間のかかる処理の実行中
+
+**実装**:
+```swift
+struct TaskFormView: View {
+    @State private var isSaving = false
+    @State private var taskName = ""
+
+    var body: some View {
+        VStack(spacing: 24) {
+            TextField("タスク名", text: $taskName)
+
+            PrimaryButton(
+                title: isSaving ? "保存中..." : "保存",
+                isLoading: isSaving
+            ) {
+                saveTask()
+            }
+        }
+    }
+
+    func saveTask() {
+        isSaving = true
+        // API呼び出し
+        Task {
+            try await apiClient.saveTask(name: taskName)
+            isSaving = false
+        }
+    }
+}
+```
+
+---
+
+#### ボタンのサイズバリエーション
+
+ボタンには3つのサイズバリエーションを定義します（オプション）。
+
+##### Large（大）
+
+**用途**: フォーム画面の主要アクション、全幅ボタン
+
+**サイズ**:
+- パディング: 水平24pt、垂直16pt
+- フォント: `.body` + `.fontWeight(.semibold)`
+- 最小高さ: 48pt
+
+```swift
+struct LargePrimaryButton: View {
+    let title: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.body)
+                .fontWeight(.semibold)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 16)
+                .background(Color.accentColor)
+                .foregroundStyle(.white)
+                .cornerRadius(8)
+        }
+        .frame(minHeight: 48)
+    }
+}
+```
+
+---
+
+##### Medium（中）
+
+**用途**: 標準的なボタン、カード内のアクション
+
+**サイズ**:
+- パディング: 水平24pt、垂直12pt
+- フォント: `.body` + `.fontWeight(.semibold)`
+- 最小高さ: 44pt（タップ領域確保）
+
+```swift
+// 上記のPrimaryButtonがMediumサイズに相当
+```
+
+---
+
+##### Small（小）
+
+**用途**: コンパクトなボタン、リストアイテム内のアクション
+
+**サイズ**:
+- パディング: 水平16pt、垂直8pt
+- フォント: `.subheadline` + `.fontWeight(.medium)`
+- 最小高さ: 36pt
+
+```swift
+struct SmallPrimaryButton: View {
+    let title: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(Color.accentColor)
+                .foregroundStyle(.white)
+                .cornerRadius(6)
+        }
+        .frame(minHeight: 36)
+    }
+}
+```
+
+---
+
+#### アイコン付きボタン
+
+ボタンにアイコンを追加することで、アクションの意図をより明確に伝えることができます。
+
+**パターン1: アイコン + テキスト（左右配置）**
+
+```swift
+Button {
+    addTask()
+} label: {
+    HStack(spacing: 8) { // xs: アイコンとテキストの間隔
+        Image(systemName: "plus")
+        Text("新しいタスク")
+    }
+    .padding(.horizontal, 24)
+    .padding(.vertical, 12)
+    .background(Color.accentColor)
+    .foregroundStyle(.white)
+    .cornerRadius(8)
+}
+```
+
+**パターン2: アイコンのみ**
+
+```swift
+Button {
+    editTask()
+} label: {
+    Image(systemName: "pencil")
+        .font(.body)
+        .frame(width: 44, height: 44) // 最小タップ領域確保
+        .background(Color(.secondarySystemBackground))
+        .cornerRadius(8)
+}
+.accessibilityLabel("タスクを編集") // VoiceOver対応
+```
+
+**パターン3: アイコン + テキスト（上下配置）**
+
+```swift
+Button {
+    shareTask()
+} label: {
+    VStack(spacing: 4) { // xxs: 密接な関連
+        Image(systemName: "square.and.arrow.up")
+            .font(.title2)
+        Text("共有")
+            .font(.caption)
+    }
+    .padding(12)
+    .background(Color(.secondarySystemBackground))
+    .cornerRadius(8)
+}
+```
+
+---
+
+#### ボタンのベストプラクティス
+
+##### DO（推奨）
+
+✅ **明確なラベルを使用する**:
+```swift
+// 良い例
+PrimaryButton(title: "タスクを保存") { saveTask() }
+
+// 悪い例
+PrimaryButton(title: "OK") { saveTask() } // 何をするのか不明確
+```
+
+✅ **アクションに適したスタイルを選択する**:
+```swift
+// 主要アクション
+PrimaryButton(title: "保存") { save() }
+
+// 破壊的アクション
+DestructiveButton(title: "削除") { delete() }
+
+// 補助的アクション
+SecondaryButton(title: "キャンセル") { cancel() }
+```
+
+✅ **ローディング状態を明示する**:
+```swift
+PrimaryButton(
+    title: isSaving ? "保存中..." : "保存",
+    isLoading: isSaving
+) {
+    saveTask()
+}
+```
+
+✅ **最小タップ領域を確保する**:
+```swift
+// すべてのボタンは最低44x44ptのタップ領域を確保
+Button("編集") { edit() }
+    .frame(minWidth: 44, minHeight: 44)
+```
+
+✅ **アクセシビリティラベルを提供する**:
+```swift
+Button {
+    deleteTask()
+} label: {
+    Image(systemName: "trash")
+}
+.accessibilityLabel("タスクを削除")
+```
+
+---
+
+##### DON'T（非推奨）
+
+❌ **1画面に複数のプライマリボタンを配置しない**:
+```swift
+// 悪い例
+VStack {
+    PrimaryButton(title: "保存") { save() }
+    PrimaryButton(title: "送信") { submit() } // どちらが主要なアクション?
+}
+
+// 良い例
+VStack {
+    PrimaryButton(title: "保存") { save() }
+    SecondaryButton(title: "下書き保存") { saveDraft() }
+}
+```
+
+❌ **ボタンテキストを長くしすぎない**:
+```swift
+// 悪い例
+PrimaryButton(title: "このタスクを保存してリストに追加する") { save() }
+
+// 良い例
+PrimaryButton(title: "保存") { save() }
+```
+
+❌ **無効化状態で理由を説明しない**:
+```swift
+// 改善の余地あり
+PrimaryButton(title: "保存", isDisabled: true) { save() }
+
+// より良い例（無効化の理由を表示）
+VStack {
+    PrimaryButton(title: "保存", isDisabled: taskName.isEmpty) { save() }
+    if taskName.isEmpty {
+        Text("タスク名を入力してください")
+            .font(.caption)
+            .foregroundStyle(.red)
+    }
+}
+```
+
+❌ **タップ時のフィードバックを省略しない**:
+```swift
+// SwiftUIのButtonは自動的にフィードバックを提供
+// カスタムタップ処理を実装する場合は、必ずフィードバックを追加
+Button { action() } label: { /* ... */ }
+    .scaleEffect(isPressed ? 0.95 : 1.0)
+    .animation(.spring(), value: isPressed)
+```
+
+---
+
+#### ボタンの命名規則
+
+コンポーネントファイルの命名は、PascalCaseに従います。
+
+**推奨される命名パターン**:
+- `PrimaryButton.swift` - プライマリボタンコンポーネント
+- `SecondaryButton.swift` - セカンダリボタンコンポーネント
+- `TertiaryButton.swift` - ターシャリボタンコンポーネント
+- `DestructiveButton.swift` - デストラクティブボタンコンポーネント
+
+**ファイル配置**:
+```
+kajilis/
+├── Components/
+│   └── Buttons/
+│       ├── PrimaryButton.swift
+│       ├── SecondaryButton.swift
+│       ├── TertiaryButton.swift
+│       └── DestructiveButton.swift
+```
+
+---
+
+#### ボタン実装チェックリスト
+
+ボタンコンポーネントを実装する際のチェックリスト:
+
+- [ ] 4つのスタイルバリエーション（primary、secondary、tertiary、destructive）を実装している
+- [ ] 5つの状態（default、hover、pressed、disabled、loading）をサポートしている
+- [ ] 最小タップ領域44x44ptを確保している
+- [ ] アイコン付きボタンをサポートしている（オプション）
+- [ ] アクセシビリティラベルを適切に設定している
+- [ ] Dynamic Typeをサポートしている
+- [ ] ローディング状態で`ProgressView`を表示している
+- [ ] 無効化状態で視覚的なフィードバックを提供している
+- [ ] タップ時のインタラクションフィードバック（スケール変化など）を実装している
+- [ ] コンポーネントファイルをPascalCaseで命名し、適切なディレクトリに配置している
 
 ---
 
