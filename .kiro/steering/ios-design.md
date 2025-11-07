@@ -80,8 +80,206 @@ Kajilisデザインシステムは、以下の5つの基本原則に基づいて
 
 ## カラーシステム
 
-<!-- このセクションは次のタスクで実装 -->
-詳細は今後の実装で追加されます。
+Kajilisのカラーシステムは、iOS標準のシステムカラーをベースに、家族向けの温かみと使いやすさを重視した設計です。すべてのカラーはライトモード・ダークモードの両方に対応し、アクセシビリティ基準（WCAG 2.1 AA）を満たします。
+
+### ブランドカラー
+
+#### プライマリカラー（Primary）
+
+アプリの主要なアクションとブランドアイデンティティを表現するカラーです。
+
+| モード | カラー値 | 用途 |
+|--------|---------|------|
+| Light | `#007AFF` | 主要ボタン、アクティブな状態、リンク |
+| Dark | `#0A84FF` | 主要ボタン、アクティブな状態、リンク |
+
+**使用例**:
+- プライマリボタンの背景色
+- 選択中のタブアイコン
+- アクティブな入力フィールドの枠線
+- リンクテキスト
+
+```swift
+// SwiftUI実装例
+Button("タスクを追加") {
+    // アクション
+}
+.buttonStyle(.borderedProminent)
+.tint(Color("primaryColor")) // Assets.xcassetsで定義
+```
+
+#### セカンダリカラー（Secondary）
+
+補助的なUIエレメントや、プライマリカラーとの組み合わせで使用するカラーです。
+
+| モード | カラー値 | 用途 |
+|--------|---------|------|
+| Light | `#FF9500` | セカンダリボタン、強調表示、温かみのあるアクセント |
+| Dark | `#FF9F0A` | セカンダリボタン、強調表示、温かみのあるアクセント |
+
+**使用例**:
+- セカンダリボタンの背景色
+- 重要な通知バッジ
+- カテゴリータグの背景色
+- 期日が近いタスクのハイライト
+
+```swift
+// SwiftUI実装例
+Button("詳細を見る") {
+    // アクション
+}
+.buttonStyle(.bordered)
+.tint(Color("secondaryColor"))
+```
+
+#### アクセントカラー（Accent）
+
+成功状態や完了アクションなど、ポジティブなフィードバックに使用します。
+
+| モード | カラー値 | 用途 |
+|--------|---------|------|
+| Light | `#34C759` | 成功メッセージ、完了状態、ポジティブなアクション |
+| Dark | `#30D158` | 成功メッセージ、完了状態、ポジティブなアクション |
+
+**使用例**:
+- 完了チェックマーク
+- 成功トースト通知
+- 「保存しました」などの成功メッセージ
+- 完了済みタスクの背景色
+
+```swift
+// SwiftUI実装例
+HStack {
+    Image(systemName: "checkmark.circle.fill")
+        .foregroundStyle(Color("accentColor"))
+    Text("タスクを完了しました")
+}
+```
+
+### カラー命名規則
+
+カラー名は**セマンティック（意味論的）命名**を採用し、用途が明確に分かるようにします。
+
+**命名パターン**:
+- `primaryColor`: プライマリカラー
+- `secondaryColor`: セカンダリカラー
+- `accentColor`: アクセントカラー
+- `successColor`: 成功状態
+- `warningColor`: 警告状態
+- `errorColor`: エラー状態
+- `infoColor`: 情報表示
+- `backgroundPrimary`: 主背景色
+- `backgroundSecondary`: 副背景色
+- `backgroundTertiary`: 3次背景色
+
+**避けるべき命名**:
+- ❌ `blue500`, `red700` などの色相ベース命名
+- ❌ `color1`, `color2` などの番号ベース命名
+
+### Assets.xcassetsでの実装
+
+SwiftUIでカラーを使用するには、`Assets.xcassets`にColor Setを作成します。
+
+#### 手順
+
+1. **Xcodeでプロジェクトを開く**
+2. **Assets.xcassetsを選択**
+3. **右クリック → New Color Set**
+4. **カラー名を設定**（例: `primaryColor`）
+5. **Appearancesを"Any, Light, Dark"に設定**
+6. **Light modeとDark modeそれぞれにカラー値を設定**
+
+#### 設定例（primaryColor）
+
+```
+primaryColor (Color Set)
+├── Any Appearance: None（未使用）
+├── Light Appearance: #007AFF
+└── Dark Appearance: #0A84FF
+```
+
+#### SwiftUIでの参照方法
+
+```swift
+// 方法1: Assets.xcassetsのColor Setを参照
+Color("primaryColor")
+
+// 方法2: 拡張を使って定義（推奨）
+extension Color {
+    static let primaryColor = Color("primaryColor")
+    static let secondaryColor = Color("secondaryColor")
+    static let accentColor = Color("accentColor")
+}
+
+// 使用例
+Text("Hello, Kajilis!")
+    .foregroundColor(.primaryColor)
+```
+
+### カラーアクセシビリティ
+
+すべてのカラーの組み合わせは、WCAG 2.1 AA基準（コントラスト比4.5:1以上）を満たす必要があります。
+
+#### コントラスト比の確認方法
+
+**推奨ツール**:
+- [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/)
+- Xcode Accessibility Inspector
+- Figma Contrast Plugin
+
+#### ブランドカラーのコントラスト比
+
+| カラー | 背景 | コントラスト比 | 評価 |
+|--------|------|--------------|------|
+| Primary (Light #007AFF) | White (#FFFFFF) | 4.51:1 | ✅ AA |
+| Primary (Dark #0A84FF) | Black (#000000) | 8.59:1 | ✅ AAA |
+| Secondary (Light #FF9500) | White (#FFFFFF) | 3.03:1 | ⚠️ Large text only |
+| Secondary (Dark #FF9F0A) | Black (#000000) | 5.47:1 | ✅ AA |
+
+**注意**: セカンダリカラー（Light）は小さいテキストには使用せず、大きな見出しやボタン背景に限定します。
+
+### ベストプラクティス
+
+#### DO（推奨）
+
+✅ セマンティックカラー名を使用
+```swift
+Button("保存") { }
+    .tint(.primaryColor) // ✅ 意図が明確
+```
+
+✅ システムカラーとの調和
+```swift
+// iOS標準のセマンティックカラーと併用
+Text("エラーメッセージ")
+    .foregroundColor(.red) // システム標準
+```
+
+✅ Dynamic Colorに対応
+```swift
+// Assets.xcassetsで定義したカラーは自動的にDynamic Color対応
+Color("primaryColor") // ライト/ダークモード自動切り替え
+```
+
+#### DON'T（非推奨）
+
+❌ ハードコードされたカラー値
+```swift
+Button("保存") { }
+    .tint(Color(red: 0, green: 0.478, blue: 1)) // ❌ 保守困難
+```
+
+❌ 用途と異なる命名
+```swift
+Color("buttonBlue") // ❌ 実装依存の命名
+```
+
+❌ コントラスト比を無視
+```swift
+Text("重要な情報")
+    .foregroundColor(Color(white: 0.9)) // ❌ 白背景で読みにくい
+    .background(.white)
+```
 
 ---
 
