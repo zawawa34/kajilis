@@ -4017,6 +4017,781 @@ kajilis/
 
 ---
 
+### カードコンポーネント
+
+カードは、関連する情報やアクションをグループ化して表示するコンテナコンポーネントです。Kajilisでは、タスクカード、情報カード、アクションカードなど、複数のカードバリエーションを定義します。
+
+---
+
+#### カードの用途
+
+カードは以下の場面で使用されます：
+
+- **タスク表示**: タスクリスト内の個別タスク情報の表示
+- **情報グループ化**: 関連する情報をまとめて表示
+- **アクション提供**: タップ可能なカードでナビゲーションや詳細表示
+- **サマリー表示**: 統計情報やダッシュボードウィジェット
+
+---
+
+#### カードの構成要素
+
+カードは以下の3つの主要な構成要素から構成されます：
+
+##### 1. ヘッダー（Header）
+
+**用途**: カードのタイトル、アイコン、補助アクション
+
+**構成要素**:
+- タイトルテキスト（必須）
+- アイコン（オプション）
+- 補助アクションボタン（オプション、例: メニューボタン）
+
+**実装例**:
+```swift
+HStack(spacing: 12) { // s: 主要要素間
+    Image(systemName: "checkmark.circle.fill")
+        .foregroundStyle(.green)
+
+    Text("タスク名")
+        .font(.headline)
+        .foregroundStyle(.primary)
+
+    Spacer()
+
+    Button {
+        showMenu()
+    } label: {
+        Image(systemName: "ellipsis")
+            .foregroundStyle(.secondary)
+    }
+}
+```
+
+---
+
+##### 2. ボディ（Body）
+
+**用途**: カードのメインコンテンツ
+
+**構成要素**:
+- 説明テキスト（オプション）
+- メタデータ（日付、タグ、ステータスなど）
+- 追加情報（オプション）
+
+**実装例**:
+```swift
+VStack(alignment: .leading, spacing: 8) { // xs: 密接に関連した情報
+    Text("タスクの詳細な説明がここに表示されます...")
+        .font(.body)
+        .foregroundStyle(.primary)
+        .lineLimit(2)
+
+    HStack(spacing: 16) { // m: メタデータ間
+        Label("期限: 11/7", systemImage: "calendar")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+
+        Label("高", systemImage: "exclamationmark.circle")
+            .font(.caption)
+            .foregroundStyle(.orange)
+    }
+}
+```
+
+---
+
+##### 3. フッター（Footer）
+
+**用途**: カードのアクションボタンや追加情報
+
+**構成要素**:
+- アクションボタン（オプション）
+- 補足情報（オプション）
+
+**実装例**:
+```swift
+HStack(spacing: 12) { // s: ボタン間
+    Button("編集") {
+        editTask()
+    }
+    .font(.subheadline)
+    .foregroundStyle(.accentColor)
+
+    Button("削除") {
+        deleteTask()
+    }
+    .font(.subheadline)
+    .foregroundStyle(.red)
+
+    Spacer()
+
+    Text("作成日: 11/1")
+        .font(.caption)
+        .foregroundStyle(.secondary)
+}
+```
+
+---
+
+#### カードのバリエーション
+
+##### 1. Task Card（タスクカード）
+
+**用途**: タスク管理アプリのメインカード、タスク情報の表示
+
+**視覚的特徴**:
+- 背景色: `.secondarySystemBackground`
+- 角丸: 12pt
+- パディング: 16pt（m）
+- シャドウ: なし（またはごく軽いシャドウ）
+
+**構成**:
+- ヘッダー: チェックボックス + タスク名 + メニューボタン
+- ボディ: 説明 + メタデータ（期限、優先度、タグ）
+- フッター: なし（またはアクションボタン）
+
+**SwiftUIコード例**:
+
+```swift
+// Components/Cards/TaskCard.swift
+import SwiftUI
+
+struct TaskCard: View {
+    let task: Task
+    let onToggle: () -> Void
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            VStack(alignment: .leading, spacing: 12) { // s: カード内要素間
+                // ヘッダー
+                HStack(spacing: 12) {
+                    Button(action: onToggle) {
+                        Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
+                            .font(.title2)
+                            .foregroundStyle(task.isCompleted ? .green : .secondary)
+                    }
+
+                    Text(task.name)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                        .strikethrough(task.isCompleted)
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+
+                // ボディ
+                if let description = task.description, !description.isEmpty {
+                    Text(description)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+
+                // メタデータ
+                HStack(spacing: 16) {
+                    if let dueDate = task.dueDate {
+                        Label(dueDate.formatted(date: .abbreviated, time: .omitted),
+                              systemImage: "calendar")
+                            .font(.caption)
+                            .foregroundStyle(task.isOverdue ? .red : .secondary)
+                    }
+
+                    if let priority = task.priority {
+                        Label(priority.label, systemImage: "exclamationmark.circle")
+                            .font(.caption)
+                            .foregroundStyle(priority.color)
+                    }
+                }
+            }
+            .padding(16) // m: カード内パディング
+            .background(Color(.secondarySystemBackground))
+            .cornerRadius(12)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// 使用例
+TaskCard(
+    task: sampleTask,
+    onToggle: { toggleTaskCompletion() },
+    onTap: { showTaskDetail() }
+)
+```
+
+---
+
+##### 2. Info Card（情報カード）
+
+**用途**: 静的な情報表示、通知、お知らせ
+
+**視覚的特徴**:
+- 背景色: `.secondarySystemBackground`または`.tertiarySystemBackground`
+- 角丸: 12pt
+- パディング: 16pt（m）
+- 左側アクセント: オプション（4pt幅のカラーバー）
+
+**構成**:
+- ヘッダー: アイコン + タイトル
+- ボディ: 説明文
+- フッター: なし（またはアクションリンク）
+
+**SwiftUIコード例**:
+
+```swift
+// Components/Cards/InfoCard.swift
+import SwiftUI
+
+struct InfoCard: View {
+    let title: String
+    let message: String
+    let icon: String
+    let accentColor: Color
+    var action: (() -> Void)? = nil
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) { // s: 主要要素間
+            // アイコン
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundStyle(accentColor)
+
+            // コンテンツ
+            VStack(alignment: .leading, spacing: 8) { // xs: 密接な情報
+                Text(title)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+
+                Text(message)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                if let action = action {
+                    Button("詳細を表示") {
+                        action()
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(accentColor)
+                }
+            }
+
+            Spacer()
+        }
+        .padding(16) // m: カード内パディング
+        .background(Color(.secondarySystemBackground))
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(accentColor.opacity(0.3), lineWidth: 1)
+        )
+    }
+}
+
+// 使用例
+InfoCard(
+    title: "新機能のお知らせ",
+    message: "タスクの繰り返し設定が可能になりました。",
+    icon: "info.circle.fill",
+    accentColor: .blue
+) {
+    showFeatureDetail()
+}
+```
+
+---
+
+##### 3. Summary Card（サマリーカード）
+
+**用途**: 統計情報、数値データの表示
+
+**視覚的特徴**:
+- 背景色: `.secondarySystemBackground`
+- 角丸: 12pt
+- パディング: 16pt（m）
+- 中央揃えまたは左揃え
+
+**構成**:
+- ヘッダー: タイトル + アイコン
+- ボディ: 大きな数値 + 単位
+- フッター: 補足情報（変化率など）
+
+**SwiftUIコード例**:
+
+```swift
+// Components/Cards/SummaryCard.swift
+import SwiftUI
+
+struct SummaryCard: View {
+    let title: String
+    let value: String
+    let icon: String
+    let iconColor: Color
+    var subtitle: String? = nil
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) { // s: セクション間
+            // ヘッダー
+            HStack(spacing: 8) { // xs: アイコンとタイトル
+                Image(systemName: icon)
+                    .font(.title3)
+                    .foregroundStyle(iconColor)
+
+                Text(title)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            // 数値
+            Text(value)
+                .font(.system(size: 32, weight: .bold))
+                .foregroundStyle(.primary)
+
+            // サブタイトル
+            if let subtitle = subtitle {
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16) // m: カード内パディング
+        .background(Color(.secondarySystemBackground))
+        .cornerRadius(12)
+    }
+}
+
+// 使用例
+SummaryCard(
+    title: "完了したタスク",
+    value: "24",
+    icon: "checkmark.circle.fill",
+    iconColor: .green,
+    subtitle: "今週 +5"
+)
+```
+
+---
+
+##### 4. Action Card（アクションカード）
+
+**用途**: タップ可能な大きなアクション領域、機能へのショートカット
+
+**視覚的特徴**:
+- 背景色: `.secondarySystemBackground`
+- 角丸: 12pt
+- パディング: 20pt（l）
+- ホバー/プレス時のフィードバック
+
+**構成**:
+- ヘッダー: アイコン + タイトル
+- ボディ: 説明文
+- フッター: 矢印アイコン
+
+**SwiftUIコード例**:
+
+```swift
+// Components/Cards/ActionCard.swift
+import SwiftUI
+
+struct ActionCard: View {
+    let title: String
+    let description: String
+    let icon: String
+    let iconColor: Color
+    let action: () -> Void
+
+    @State private var isPressed = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 16) { // m: 主要要素間
+                // アイコン
+                Image(systemName: icon)
+                    .font(.system(size: 32))
+                    .foregroundStyle(iconColor)
+                    .frame(width: 56, height: 56)
+                    .background(iconColor.opacity(0.15))
+                    .cornerRadius(12)
+
+                // コンテンツ
+                VStack(alignment: .leading, spacing: 4) { // xxs: 密接な情報
+                    Text(title)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+
+                    Text(description)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                // 矢印
+                Image(systemName: "chevron.right")
+                    .font(.body)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(20) // l: カード内パディング
+            .background(Color(.secondarySystemBackground))
+            .cornerRadius(12)
+        }
+        .buttonStyle(.plain)
+        .scaleEffect(isPressed ? 0.98 : 1.0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in isPressed = true }
+                .onEnded { _ in isPressed = false }
+        )
+    }
+}
+
+// 使用例
+ActionCard(
+    title: "新しいタスクを作成",
+    description: "タスクを追加してプロジェクトを進めましょう",
+    icon: "plus.circle.fill",
+    iconColor: .blue
+) {
+    createNewTask()
+}
+```
+
+---
+
+#### カードの状態
+
+カードは以下の状態を持つことができます：
+
+##### 1. Default（デフォルト）
+
+**説明**: カードの通常状態
+
+**視覚的特徴**:
+- 通常の背景色と不透明度
+- 影なし（またはごく軽い影）
+
+---
+
+##### 2. Pressed（プレス）
+
+**説明**: タップ可能なカードがタップされている状態
+
+**視覚的特徴**:
+- スケール: 0.98倍に縮小
+- 不透明度: やや低下（0.9程度）
+- アニメーション: 0.3秒のスプリングアニメーション
+
+**実装**:
+```swift
+.scaleEffect(isPressed ? 0.98 : 1.0)
+.opacity(isPressed ? 0.9 : 1.0)
+.animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
+```
+
+---
+
+##### 3. Selected（選択）
+
+**説明**: カードが選択されている状態（複数選択モードなど）
+
+**視覚的特徴**:
+- ボーダー: accentColorで2pt
+- 背景色: accentColorの10%不透明度
+- チェックマーク: 右上に表示
+
+**実装**:
+```swift
+.overlay(
+    RoundedRectangle(cornerRadius: 12)
+        .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 2)
+)
+.background(
+    isSelected ? Color.accentColor.opacity(0.1) : Color(.secondarySystemBackground)
+)
+```
+
+---
+
+##### 4. Disabled（無効）
+
+**説明**: カードが無効化されている状態
+
+**視覚的特徴**:
+- 不透明度: 0.5
+- インタラクション: 無効
+
+**実装**:
+```swift
+.opacity(isDisabled ? 0.5 : 1.0)
+.disabled(isDisabled)
+```
+
+---
+
+#### カードのインタラクション
+
+##### タップ可能なカード
+
+タップ可能なカードは、`.buttonStyle(.plain)`を使用してデフォルトのボタンスタイルを無効化し、カスタムインタラクションを実装します。
+
+```swift
+Button(action: onTap) {
+    // カードコンテンツ
+}
+.buttonStyle(.plain)
+```
+
+---
+
+##### スワイプアクション
+
+リスト内のカードにスワイプアクションを追加できます。
+
+```swift
+TaskCard(task: task)
+    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+        Button(role: .destructive) {
+            deleteTask()
+        } label: {
+            Label("削除", systemImage: "trash")
+        }
+
+        Button {
+            editTask()
+        } label: {
+            Label("編集", systemImage: "pencil")
+        }
+        .tint(.blue)
+    }
+```
+
+---
+
+##### ドラッグ&ドロップ
+
+カードをドラッグ可能にすることで、並び替えや移動を実現できます。
+
+```swift
+TaskCard(task: task)
+    .onDrag {
+        NSItemProvider(object: task.id as NSString)
+    }
+```
+
+---
+
+#### カードのレイアウトパターン
+
+##### パターン1: リスト表示
+
+```swift
+ScrollView {
+    LazyVStack(spacing: 12) { // s: カード間隔
+        ForEach(tasks) { task in
+            TaskCard(
+                task: task,
+                onToggle: { toggleTask(task) },
+                onTap: { showDetail(task) }
+            )
+        }
+    }
+    .padding(16) // m: 画面パディング
+}
+```
+
+---
+
+##### パターン2: グリッド表示
+
+```swift
+ScrollView {
+    LazyVGrid(
+        columns: [
+            GridItem(.flexible(), spacing: 12), // s: カラム間隔
+            GridItem(.flexible(), spacing: 12)
+        ],
+        spacing: 12 // s: 行間隔
+    ) {
+        ForEach(summaries) { summary in
+            SummaryCard(
+                title: summary.title,
+                value: summary.value,
+                icon: summary.icon,
+                iconColor: summary.color
+            )
+        }
+    }
+    .padding(16) // m: 画面パディング
+}
+```
+
+---
+
+##### パターン3: 水平スクロール
+
+```swift
+ScrollView(.horizontal, showsIndicators: false) {
+    HStack(spacing: 12) { // s: カード間隔
+        ForEach(actionItems) { item in
+            ActionCard(
+                title: item.title,
+                description: item.description,
+                icon: item.icon,
+                iconColor: item.color,
+                action: { performAction(item) }
+            )
+            .frame(width: 280)
+        }
+    }
+    .padding(.horizontal, 16) // m: 左右パディング
+}
+```
+
+---
+
+#### カードのベストプラクティス
+
+##### DO（推奨）
+
+✅ **関連情報をグループ化する**:
+```swift
+// 良い例
+TaskCard(
+    task: task,
+    onToggle: { toggle() },
+    onTap: { showDetail() }
+)
+```
+
+✅ **適切なパディングとスペーシングを使用する**:
+```swift
+VStack(spacing: 12) { // s: カード内要素間
+    HeaderView()
+    BodyView()
+}
+.padding(16) // m: カード内パディング
+```
+
+✅ **タップ可能なカードにフィードバックを提供する**:
+```swift
+.scaleEffect(isPressed ? 0.98 : 1.0)
+.animation(.spring(), value: isPressed)
+```
+
+✅ **カード間に適切な間隔を設定する**:
+```swift
+LazyVStack(spacing: 12) { // s: カード間隔
+    ForEach(items) { item in
+        Card(item: item)
+    }
+}
+```
+
+✅ **アクセシビリティラベルを提供する**:
+```swift
+TaskCard(task: task)
+    .accessibilityElement(children: .combine)
+    .accessibilityLabel("\(task.name), 期限: \(task.dueDate)")
+```
+
+---
+
+##### DON'T（非推奨）
+
+❌ **カードに過剰な情報を詰め込まない**:
+```swift
+// 悪い例
+VStack {
+    Text("タイトル")
+    Text("説明1")
+    Text("説明2")
+    Text("説明3")
+    // ... 多すぎる情報
+}
+```
+
+❌ **カード内のアクションボタンを多用しない**:
+```swift
+// 悪い例
+HStack {
+    Button("編集") { }
+    Button("削除") { }
+    Button("共有") { }
+    Button("複製") { }
+    Button("アーカイブ") { } // ボタンが多すぎる
+}
+```
+
+❌ **カード全体とカード内要素の両方にタップアクションを設定しない**:
+```swift
+// 悪い例
+Button(action: cardAction) {
+    VStack {
+        Button("内部ボタン") { innerAction() } // 競合する
+    }
+}
+// タップ領域が重複して混乱を招く
+```
+
+❌ **極端に小さいまたは大きいカードを作らない**:
+```swift
+// 悪い例
+Card()
+    .frame(width: 50, height: 50) // 小さすぎる
+
+Card()
+    .frame(width: 500, height: 800) // 大きすぎる
+```
+
+---
+
+#### カードの命名規則
+
+コンポーネントファイルの命名は、PascalCaseに従います。
+
+**推奨される命名パターン**:
+- `TaskCard.swift` - タスクカードコンポーネント
+- `InfoCard.swift` - 情報カードコンポーネント
+- `SummaryCard.swift` - サマリーカードコンポーネント
+- `ActionCard.swift` - アクションカードコンポーネント
+
+**ファイル配置**:
+```
+kajilis/
+├── Components/
+│   └── Cards/
+│       ├── TaskCard.swift
+│       ├── InfoCard.swift
+│       ├── SummaryCard.swift
+│       └── ActionCard.swift
+```
+
+---
+
+#### カード実装チェックリスト
+
+カードコンポーネントを実装する際のチェックリスト:
+
+- [ ] カードの3つの構成要素（ヘッダー、ボディ、フッター）を適切に配置している
+- [ ] カードのバリエーション（Task、Info、Summary、Action）を実装している
+- [ ] カードの状態（default、pressed、selected、disabled）をサポートしている
+- [ ] タップ可能なカードにインタラクションフィードバックを提供している
+- [ ] 適切なパディング（16pt）とスペーシング（12pt）を使用している
+- [ ] 角丸（12pt）を適用している
+- [ ] 背景色に`.secondarySystemBackground`を使用している
+- [ ] アクセシビリティラベルを適切に設定している
+- [ ] リスト、グリッド、水平スクロールのレイアウトパターンを実装している
+- [ ] コンポーネントファイルをPascalCaseで命名し、適切なディレクトリに配置している
+
+---
+
 ## レイアウトパターン
 
 <!-- このセクションは今後のタスクで実装 -->
