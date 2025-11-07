@@ -1385,6 +1385,376 @@ VStack {
 }
 ```
 
+### Dynamic Typeとアクセシビリティ対応
+
+KajilisのタイポグラフィシステムはDynamic Typeを完全にサポートし、すべてのユーザーが快適に利用できるアクセシブルな設計を実現します。
+
+#### Dynamic Typeの概要
+
+Dynamic Typeは、iOSのアクセシビリティ機能で、ユーザーが設定したフォントサイズに応じてテキストサイズが自動的に調整されます。
+
+**サポートされるサイズカテゴリ**:
+- **標準サイズ**: XS, S, M (default), L, XL, XXL, XXXL (7段階)
+- **アクセシビリティサイズ**: AX1, AX2, AX3, AX4, AX5 (5段階)
+
+**合計**: 12段階のフォントサイズをサポート
+
+#### Dynamic Typeのサポート方法
+
+SwiftUIの標準的なテキストスタイル（`.font(.body)`など）を使用することで、Dynamic Typeが自動的にサポートされます。
+
+**自動対応（推奨）**:
+```swift
+// ✅ Dynamic Typeに自動対応
+Text("タスク一覧")
+    .font(.largeTitle)
+
+Text("家族みんなで使えるタスク管理アプリです。")
+    .font(.body)
+```
+
+**カスタムフォントでDynamic Typeを使用**:
+```swift
+// カスタムフォントでもDynamic Typeをサポート
+Text("タスク名")
+    .font(.custom("HiraKakuProN-W6", size: 17, relativeTo: .body))
+    // relativeTo: で基準となるテキストスタイルを指定
+```
+
+**固定サイズ（非推奨）**:
+```swift
+// ❌ Dynamic Typeに対応しない（アクセシビリティ違反）
+Text("タイトル")
+    .font(.system(size: 28)) // 固定サイズは避ける
+```
+
+#### アクセシビリティサイズへの対応
+
+アクセシビリティサイズ（AX1〜AX5）では、テキストサイズが大幅に拡大されるため、レイアウトの調整が必要になる場合があります。
+
+**アクセシビリティサイズの検出**:
+```swift
+import SwiftUI
+
+struct TaskListView: View {
+    @Environment(\.dynamicTypeSize) var dynamicTypeSize
+
+    var body: some View {
+        VStack(spacing: isAccessibilitySize ? 16 : 8) {
+            // レイアウト調整
+        }
+    }
+
+    // アクセシビリティサイズかどうかを判定
+    var isAccessibilitySize: Bool {
+        dynamicTypeSize >= .accessibility1
+    }
+}
+```
+
+**最大サイズの制限**:
+特定の要素で極端に大きなフォントを避ける必要がある場合、最大サイズを制限できます。
+
+```swift
+// タブバーのラベルなど、スペースが限られている場合
+Text("ホーム")
+    .font(.caption)
+    .dynamicTypeSize(...DynamicTypeSize.accessibility3)
+    // accessibility3までに制限（accessibility4, 5は適用されない）
+```
+
+**注意**: 最大サイズの制限は必要最小限にとどめ、できる限り全サイズをサポートすることが推奨されます。
+
+#### レイアウトの調整パターン
+
+アクセシビリティサイズでレイアウトが破綻しないよう、以下のパターンを適用します。
+
+**パターン1: 水平レイアウトから垂直レイアウトへ切り替え**:
+```swift
+struct TaskRowView: View {
+    @Environment(\.dynamicTypeSize) var dynamicTypeSize
+    let task: Task
+
+    var body: some View {
+        Group {
+            if dynamicTypeSize >= .accessibility1 {
+                // アクセシビリティサイズでは垂直レイアウト
+                VStack(alignment: .leading, spacing: 8) {
+                    taskNameView
+                    dueDateView
+                }
+            } else {
+                // 標準サイズでは水平レイアウト
+                HStack {
+                    taskNameView
+                    Spacer()
+                    dueDateView
+                }
+            }
+        }
+        .padding()
+        .background(.backgroundSecondary)
+        .cornerRadius(12)
+    }
+
+    var taskNameView: some View {
+        Text(task.name)
+            .font(.headline)
+    }
+
+    var dueDateView: some View {
+        Text(task.dueDate)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+    }
+}
+```
+
+**パターン2: スペーシングの動的調整**:
+```swift
+struct ContentView: View {
+    @Environment(\.dynamicTypeSize) var dynamicTypeSize
+
+    var body: some View {
+        VStack(spacing: spacing) {
+            // コンテンツ
+        }
+    }
+
+    // Dynamic Typeサイズに応じてスペーシングを調整
+    var spacing: CGFloat {
+        switch dynamicTypeSize {
+        case .xSmall, .small, .medium:
+            return 8
+        case .large, .xLarge, .xxLarge, .xxxLarge:
+            return 12
+        case .accessibility1, .accessibility2:
+            return 16
+        case .accessibility3, .accessibility4, .accessibility5:
+            return 20
+        @unknown default:
+            return 12
+        }
+    }
+}
+```
+
+**パターン3: ViewThatFitsによる自動レイアウト選択**:
+```swift
+struct AdaptiveTaskRow: View {
+    let task: Task
+
+    var body: some View {
+        ViewThatFits {
+            // 最初に水平レイアウトを試行
+            HStack {
+                Text(task.name)
+                Spacer()
+                Text(task.dueDate)
+            }
+
+            // 収まらない場合は垂直レイアウトに自動切り替え
+            VStack(alignment: .leading) {
+                Text(task.name)
+                Text(task.dueDate)
+            }
+        }
+        .padding()
+        .background(.backgroundSecondary)
+        .cornerRadius(12)
+    }
+}
+```
+
+#### 日本語フォントのDynamic Type対応
+
+日本語フォント（ヒラギノ角ゴシック）もDynamic Typeに自動対応しますが、以下の点に注意します。
+
+**推奨設定**:
+```swift
+// 日本語テキストの基本設定
+Text("家族みんなで使えるタスク管理アプリです。買い物リストや献立を共有できます。")
+    .font(.body)
+    .lineSpacing(4) // 日本語は行間を広げる
+    .multilineTextAlignment(.leading)
+```
+
+**長い日本語テキストのアクセシビリティ対応**:
+```swift
+struct DescriptionTextView: View {
+    let text: String
+    @Environment(\.dynamicTypeSize) var dynamicTypeSize
+
+    var body: some View {
+        Text(text)
+            .font(.body)
+            .lineSpacing(lineSpacing)
+            .multilineTextAlignment(.leading)
+    }
+
+    // Dynamic Typeサイズに応じて行間を調整
+    var lineSpacing: CGFloat {
+        if dynamicTypeSize >= .accessibility1 {
+            return 8 // アクセシビリティサイズではより広い行間
+        } else {
+            return 4 // 標準サイズ
+        }
+    }
+}
+```
+
+#### フォントスケーリングのベストプラクティス
+
+**DO（推奨）**:
+
+✅ **システムテキストスタイルを使用**
+```swift
+Text("タスク一覧")
+    .font(.largeTitle) // ✅ Dynamic Type自動対応
+```
+
+✅ **レイアウトの柔軟性を確保**
+```swift
+VStack(alignment: .leading) {
+    Text("タイトル")
+        .font(.headline)
+        .lineLimit(nil) // ✅ 無制限に折り返し可能
+
+    Text("説明文が長い場合でも適切に表示されます。")
+        .font(.body)
+        .lineLimit(nil)
+}
+```
+
+✅ **アクセシビリティサイズでのテスト**
+```swift
+#Preview("Accessibility Size") {
+    TaskListView()
+        .environment(\.dynamicTypeSize, .accessibility3)
+        // プレビューでアクセシビリティサイズを確認
+}
+```
+
+✅ **ViewThatFitsで自動レイアウト調整**
+```swift
+ViewThatFits {
+    // 複数のレイアウトオプションを用意
+    compactLayout
+    expandedLayout
+}
+```
+
+**DON'T（非推奨）**:
+
+❌ **固定フォントサイズの使用**
+```swift
+Text("タイトル")
+    .font(.system(size: 28)) // ❌ Dynamic Type非対応
+```
+
+❌ **lineLimit(1)で重要な情報を切り捨て**
+```swift
+Text("重要なタスクの説明文")
+    .font(.body)
+    .lineLimit(1) // ❌ アクセシビリティサイズで読めなくなる
+```
+
+❌ **固定の高さ制約**
+```swift
+Text("長いテキスト")
+    .frame(height: 50) // ❌ Dynamic Typeで切り取られる可能性
+```
+
+❌ **アクセシビリティサイズでのレイアウト未検証**
+```swift
+// ❌ アクセシビリティサイズでテストしていない
+HStack {
+    Text("非常に長いタスク名が入る可能性があります")
+    Spacer()
+    Text("期限情報")
+}
+// → アクセシビリティサイズで重なる可能性
+```
+
+#### アクセシビリティ検証手順
+
+**手順1: シミュレーターでの動作確認**
+
+1. **シミュレーターを起動**
+   ```bash
+   open -a Simulator
+   ```
+
+2. **設定を開く**
+   - Settings → Accessibility → Display & Text Size → Larger Text
+
+3. **フォントサイズを変更**
+   - スライダーを動かして各サイズ（特にAX1〜AX5）で確認
+
+4. **アプリを起動して全画面を確認**
+   - テキストが切り取られていないか
+   - レイアウトが破綻していないか
+   - ボタンがタップ可能か
+
+**手順2: プレビューでの確認**
+
+```swift
+#Preview("Dynamic Type Sizes") {
+    VStack(spacing: 20) {
+        TaskRowView(task: Task.sample)
+            .environment(\.dynamicTypeSize, .medium)
+
+        TaskRowView(task: Task.sample)
+            .environment(\.dynamicTypeSize, .xxxLarge)
+
+        TaskRowView(task: Task.sample)
+            .environment(\.dynamicTypeSize, .accessibility3)
+    }
+    .padding()
+}
+```
+
+**手順3: 自動テスト**
+
+```swift
+import XCTest
+@testable import kajilis
+
+final class DynamicTypeTests: XCTestCase {
+    func testTaskRowViewWithAccessibilitySize() {
+        let task = Task.sample
+        let view = TaskRowView(task: task)
+            .environment(\.dynamicTypeSize, .accessibility5)
+
+        // レイアウトが破綻していないことを確認
+        // スナップショットテストなどで検証
+    }
+}
+```
+
+#### 実装チェックリスト
+
+Dynamic Typeとアクセシビリティ対応を実装する際のチェックリストです。
+
+- [ ] すべてのテキストでシステムテキストスタイル（`.font(.body)`など）を使用
+- [ ] カスタムフォントの場合は`relativeTo`パラメータでDynamic Typeをサポート
+- [ ] 重要な情報を持つテキストで`.lineLimit()`を使用していない（または`nil`を設定）
+- [ ] アクセシビリティサイズ（AX1〜AX5）で全画面をテスト
+- [ ] 水平レイアウトが破綻する場合は`ViewThatFits`または条件分岐で垂直レイアウトに切り替え
+- [ ] 日本語テキストに適切な`.lineSpacing()`を設定
+- [ ] プレビューで複数のDynamic Typeサイズを確認
+- [ ] 固定の`frame(height:)`制約を使用していない（または最小限に制限）
+- [ ] タブバーやツールバーなど、スペースが限られる要素のみ`.dynamicTypeSize()`で最大サイズを制限
+
+#### まとめ
+
+Dynamic TypeとアクセシビリティサポートはKajilisの重要な設計原則です。すべてのテキスト要素でDynamic Typeを考慮し、アクセシビリティサイズでも快適に利用できるレイアウトを実現します。
+
+**次のステップ**:
+- SwiftUIタイポグラフィ実装ガイドの作成（タスク3.3）
+- スペーシングシステムの定義
+- コンポーネントライブラリでのDynamic Type対応
+
 ---
 
 ## スペーシングシステム
