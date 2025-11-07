@@ -2179,8 +2179,383 @@ SwiftUIのタイポグラフィシステムは、システム標準のテキス�
 
 ## スペーシングシステム
 
-<!-- このセクションは今後のタスクで実装 -->
-詳細は今後の実装で追加されます。
+Kajilisのスペーシングシステムは、8ptグリッドベースの一貫したスケールを採用し、視覚的にバランスの取れたレイアウトを実現します。すべてのスペーシング値は予測可能で、コンポーネント間の余白、パディング、マージンに統一的に適用されます。
+
+### スペーシングスケール
+
+8ptグリッドシステムをベースに、9段階のスペーシングスケールを定義します。
+
+#### スペーシング値一覧
+
+| トークン名 | 値 (pt) | 用途 |
+|----------|---------|------|
+| `xxxs` | 2pt | 極小の間隔、アイコンとテキストの微調整 |
+| `xxs` | 4pt | 非常に小さな間隔、密集したUI要素 |
+| `xs` | 8pt | 小さな間隔、コンパクトなレイアウト |
+| `s` | 12pt | やや小さめの間隔、関連要素のグルーピング |
+| `m` | 16pt | 標準的な間隔、一般的なコンポーネント間 |
+| `l` | 24pt | 大きめの間隔、セクション内の区切り |
+| `xl` | 32pt | 非常に大きな間隔、セクション間の区切り |
+| `xxl` | 48pt | 極大の間隔、画面レベルのセパレーション |
+| `xxxl` | 64pt | 最大の間隔、特別な分離が必要な場合 |
+
+### スペーシングの使い分けガイドライン
+
+#### 要素内のスペーシング（パディング）
+
+コンポーネント内部の余白に使用します。
+
+**推奨値**:
+- **xxs (4pt)**: バッジ、小さなチップの内部余白
+- **xs (8pt)**: ボタンの上下余白、小さなカードの余白
+- **s (12pt)**: ボタンの左右余白、入力フィールドの余白
+- **m (16pt)**: カードの標準的な余白、リストアイテムの余白
+- **l (24pt)**: 大きなカードやモーダルの余白
+
+**使用例**:
+```swift
+// ボタンのパディング
+Button("タスクを追加") {
+    // アクション
+}
+.padding(.horizontal, 12) // s: 左右の余白
+.padding(.vertical, 8)    // xs: 上下の余白
+
+// カードのパディング
+VStack(alignment: .leading, spacing: 8) {
+    Text("タスク名")
+    Text("詳細説明")
+}
+.padding(16) // m: カード全体の余白
+.background(.backgroundSecondary)
+.cornerRadius(12)
+```
+
+#### 要素間のスペーシング（マージン）
+
+コンポーネント間の間隔に使用します。
+
+**推奨値**:
+- **xxs (4pt)**: 同じグループ内の密接な要素（例: テキストと補足情報）
+- **xs (8pt)**: 関連する要素のグルーピング（例: ラベルと入力フィールド）
+- **s (12pt)**: 同じセクション内の要素（例: フォーム項目間）
+- **m (16pt)**: 一般的なコンポーネント間の標準的な間隔
+- **l (24pt)**: セクション内の大きな区切り
+- **xl (32pt)**: セクション間の区切り
+- **xxl (48pt)**: 画面の主要な領域間の分離
+
+**使用例**:
+```swift
+// VStackでの要素間スペーシング
+VStack(spacing: 16) { // m: 標準的なコンポーネント間
+    TaskRowView(task: task1)
+    TaskRowView(task: task2)
+    TaskRowView(task: task3)
+}
+
+// 異なるスペーシングの組み合わせ
+VStack(spacing: 0) {
+    // タイトルセクション
+    VStack(alignment: .leading, spacing: 4) { // xxs: 密接な要素
+        Text("タスク一覧")
+            .font(.largeTitle)
+        Text("今日のタスク")
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+    }
+    .padding(.bottom, 24) // l: セクション区切り
+
+    // タスクリスト
+    VStack(spacing: 12) { // s: リストアイテム間
+        ForEach(tasks) { task in
+            TaskRowView(task: task)
+        }
+    }
+}
+.padding(16) // m: 画面全体の余白
+```
+
+### レイアウトパターン別のスペーシング推奨値
+
+#### リスト画面
+
+```swift
+ScrollView {
+    VStack(spacing: 16) { // m: リストアイテム間
+        ForEach(tasks) { task in
+            VStack(alignment: .leading, spacing: 4) { // xxs: カード内の密接な要素
+                Text(task.name)
+                    .font(.headline)
+                Text(task.detail ?? "")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(16) // m: カード内部の余白
+            .background(.backgroundSecondary)
+            .cornerRadius(12)
+        }
+    }
+    .padding(16) // m: 画面全体の余白
+}
+```
+
+#### フォーム画面
+
+```swift
+Form {
+    Section {
+        VStack(alignment: .leading, spacing: 8) { // xs: ラベルと入力フィールド
+            Text("タスク名")
+                .font(.subheadline)
+            TextField("タスク名を入力", text: $taskName)
+                .textFieldStyle(.roundedBorder)
+        }
+
+        VStack(alignment: .leading, spacing: 8) { // xs: ラベルと入力フィールド
+            Text("期日")
+                .font(.subheadline)
+            DatePicker("", selection: $dueDate, displayedComponents: .date)
+                .labelsHidden()
+        }
+    }
+    .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
+    // s (12pt) 上下、m (16pt) 左右
+}
+```
+
+#### カードグリッド
+
+```swift
+LazyVGrid(columns: [
+    GridItem(.flexible(), spacing: 16), // m: 列間
+    GridItem(.flexible(), spacing: 16)
+], spacing: 16) { // m: 行間
+    ForEach(items) { item in
+        CardView(item: item)
+    }
+}
+.padding(16) // m: グリッド全体の余白
+```
+
+#### 詳細画面
+
+```swift
+ScrollView {
+    VStack(spacing: 24) { // l: セクション間
+        // ヘッダーセクション
+        VStack(alignment: .leading, spacing: 8) { // xs: 関連情報
+            Text(task.name)
+                .font(.largeTitle)
+            Text(task.category)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+
+        Divider()
+
+        // 詳細セクション
+        VStack(alignment: .leading, spacing: 12) { // s: フォーム項目
+            DetailRow(label: "期日", value: task.dueDate)
+            DetailRow(label: "担当者", value: task.assignee)
+            DetailRow(label: "ステータス", value: task.status)
+        }
+
+        Divider()
+
+        // 説明セクション
+        VStack(alignment: .leading, spacing: 8) { // xs: タイトルと本文
+            Text("詳細")
+                .font(.headline)
+            Text(task.description)
+                .font(.body)
+        }
+    }
+    .padding(16) // m: 画面全体の余白
+}
+```
+
+### 8ptグリッドシステムの原則
+
+#### 基本ルール
+
+1. **すべてのスペーシングは8の倍数**: xs (8pt), m (16pt), l (24pt), xl (32pt)
+2. **例外として4の倍数も許可**: xxxs (2pt), xxs (4pt), s (12pt)
+3. **一貫性を保つ**: 同じ種類の要素には同じスペーシングを適用
+
+#### グリッドアライメント
+
+```swift
+// ✅ DO: 8ptグリッドに沿った配置
+VStack(spacing: 16) {  // 16pt = 8 × 2
+    Text("タイトル")
+        .padding(8)    // 8pt = 8 × 1
+}
+
+// ❌ DON'T: ランダムな値
+VStack(spacing: 15) {  // ❌ 8の倍数ではない
+    Text("タイトル")
+        .padding(7)    // ❌ 8の倍数ではない
+}
+```
+
+### コンポーネント別の推奨スペーシング
+
+#### ボタン
+
+```swift
+// プライマリボタン
+Button("保存") { }
+    .padding(.horizontal, 16) // m
+    .padding(.vertical, 12)   // s
+    .background(.primaryColor)
+    .cornerRadius(8)
+
+// アイコン付きボタン
+Button {
+    // アクション
+} label: {
+    HStack(spacing: 8) { // xs: アイコンとテキスト間
+        Image(systemName: "plus")
+        Text("追加")
+    }
+    .padding(.horizontal, 16) // m
+    .padding(.vertical, 12)   // s
+}
+```
+
+#### カード
+
+```swift
+VStack(alignment: .leading, spacing: 12) { // s: カード内要素間
+    Text("タスク名")
+        .font(.headline)
+    Text("詳細説明")
+        .font(.body)
+    HStack(spacing: 8) { // xs: メタ情報間
+        Label("期日", systemImage: "calendar")
+        Label("担当者", systemImage: "person")
+    }
+    .font(.caption)
+}
+.padding(16) // m: カード内部の余白
+.background(.backgroundSecondary)
+.cornerRadius(12)
+```
+
+#### リストアイテム
+
+```swift
+HStack(spacing: 12) { // s: アイコンとコンテンツ間
+    Image(systemName: "circle")
+        .foregroundStyle(.primaryColor)
+
+    VStack(alignment: .leading, spacing: 4) { // xxs: タイトルとサブタイトル
+        Text("タスク名")
+            .font(.headline)
+        Text("詳細説明")
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+    }
+
+    Spacer()
+
+    Image(systemName: "chevron.right")
+        .foregroundStyle(.secondary)
+}
+.padding(.horizontal, 16) // m: 左右の余白
+.padding(.vertical, 12)   // s: 上下の余白
+```
+
+#### 入力フィールド
+
+```swift
+VStack(alignment: .leading, spacing: 8) { // xs: ラベルと入力
+    Text("タスク名")
+        .font(.subheadline)
+
+    TextField("入力してください", text: $text)
+        .padding(12) // s: 入力フィールド内部の余白
+        .background(.backgroundTertiary)
+        .cornerRadius(8)
+}
+```
+
+### ベストプラクティス
+
+#### DO（推奨）
+
+✅ **8ptグリッドに従う**
+```swift
+VStack(spacing: 16) { // ✅ 8の倍数
+    Text("タイトル")
+}
+.padding(24) // ✅ 8の倍数
+```
+
+✅ **一貫したスペーシングを使用**
+```swift
+// すべてのカードで同じスペーシング
+ForEach(items) { item in
+    CardView(item: item)
+        .padding(16) // ✅ 全カードで統一
+}
+```
+
+✅ **コンテキストに応じた適切な値を選択**
+```swift
+VStack(spacing: 4) {  // xxs: 密接な関係
+    Text("タイトル").font(.headline)
+    Text("サブタイトル").font(.subheadline)
+}
+
+Spacer().frame(height: 24) // l: セクション区切り
+
+VStack(spacing: 12) { // s: 通常のリスト
+    ListItem1()
+    ListItem2()
+}
+```
+
+#### DON'T（非推奨）
+
+❌ **ランダムな値を使用**
+```swift
+VStack(spacing: 13) { // ❌ グリッドに沿っていない
+    Text("タイトル")
+}
+.padding(17) // ❌ 予測不可能
+```
+
+❌ **過度に大きなスペーシング**
+```swift
+VStack(spacing: 64) { // ❌ xxxlは特別な場合のみ
+    Text("タイトル")
+    Text("本文")
+}
+```
+
+❌ **過度に小さなスペーシング**
+```swift
+HStack(spacing: 2) { // ❌ xxxsは微調整のみに使用
+    Text("ボタン1")
+    Text("ボタン2")
+}
+```
+
+### まとめ
+
+Kajilisのスペーシングシステムは、8ptグリッドベースの9段階スケール（xxxs〜xxxl）を採用し、視覚的に調和の取れたレイアウトを実現します。
+
+**スペーシング選択の基本方針**:
+1. **関連要素のグルーピング**: xxs (4pt), xs (8pt)
+2. **標準的なコンポーネント間**: s (12pt), m (16pt)
+3. **セクション区切り**: l (24pt), xl (32pt)
+4. **特別な分離**: xxl (48pt), xxxl (64pt)
+
+**次のステップ**:
+- SwiftUIスペーシング実装ガイドの作成（タスク4.2）
+- コンポーネントライブラリでのスペーシング適用
+- 実際の画面実装でのスペーシングテスト
 
 ---
 
