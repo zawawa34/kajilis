@@ -281,6 +281,314 @@ Text("重要な情報")
     .background(.white)
 ```
 
+### 状態カラー (State Colors)
+
+状態カラーは、ユーザーへのフィードバックやメッセージの種類を視覚的に伝えるために使用します。すべての状態カラーはライトモード・ダークモードに対応し、アクセシビリティ基準を満たします。
+
+#### 成功カラー (Success)
+
+操作の成功やポジティブなフィードバックを示すカラーです。
+
+| モード | カラー値 | 用途 |
+|--------|---------|------|
+| Light | `#34C759` | 成功メッセージ、完了状態、確認アイコン |
+| Dark | `#30D158` | 成功メッセージ、完了状態、確認アイコン |
+
+**使用例**:
+- タスク完了時のチェックマーク
+- 「保存しました」などの成功トースト
+- フォーム送信完了メッセージ
+- 完了済みタスクのステータス表示
+
+```swift
+// SwiftUI実装例
+HStack {
+    Image(systemName: "checkmark.circle.fill")
+        .foregroundStyle(Color(\"successColor\"))
+    Text(\"タスクを完了しました\")
+}
+.padding()
+.background(Color(\"successColor\").opacity(0.1))
+.cornerRadius(8)
+```
+
+#### 警告カラー (Warning)
+
+注意が必要な状況や、軽微な問題を示すカラーです。
+
+| モード | カラー値 | 用途 |
+|--------|---------|------|
+| Light | `#FF9500` | 警告メッセージ、注意事項、期限接近 |
+| Dark | `#FF9F0A` | 警告メッセージ、注意事項、期限接近 |
+
+**使用例**:
+- 期限が近いタスクの通知
+- 確認が必要なアクション前の警告
+- 軽微なバリデーションエラー
+- ストレージ容量警告
+
+```swift
+// SwiftUI実装例
+HStack {
+    Image(systemName: "exclamationmark.triangle.fill")
+        .foregroundStyle(Color(\"warningColor\"))
+    Text(\"期限まであと1日です\")
+}
+.padding()
+.background(Color(\"warningColor\").opacity(0.1))
+.cornerRadius(8)
+```
+
+#### エラーカラー (Error)
+
+エラーや失敗した操作、重大な問題を示すカラーです。
+
+| モード | カラー値 | 用途 |
+|--------|---------|------|
+| Light | `#FF3B30` | エラーメッセージ、失敗状態、削除アクション |
+| Dark | `#FF453A` | エラーメッセージ、失敗状態、削除アクション |
+
+**使用例**:
+- フォームバリデーションエラー
+- ネットワークエラーメッセージ
+- 削除確認ダイアログ
+- 必須項目の未入力表示
+
+```swift
+// SwiftUI実装例
+VStack(alignment: .leading, spacing: 4) {
+    TextField(\"メールアドレス\", text: $email)
+        .textFieldStyle(.roundedBorder)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color(\"errorColor\"), lineWidth: 1)
+        )
+
+    HStack(spacing: 4) {
+        Image(systemName: \"xmark.circle.fill\")
+        Text(\"有効なメールアドレスを入力してください\")
+    }
+    .font(.caption)
+    .foregroundStyle(Color(\"errorColor\"))
+}
+```
+
+#### 情報カラー (Info)
+
+中立的な情報やヒントを示すカラーです。
+
+| モード | カラー値 | 用途 |
+|--------|---------|------|
+| Light | `#007AFF` | 情報メッセージ、ヒント、ガイド |
+| Dark | `#0A84FF` | 情報メッセージ、ヒント、ガイド |
+
+**使用例**:
+- 操作ヒントやツールチップ
+- 機能説明メッセージ
+- 新機能の案内
+- 中立的な通知
+
+```swift
+// SwiftUI実装例
+HStack {
+    Image(systemName: \"info.circle.fill\")
+        .foregroundStyle(Color(\"infoColor\"))
+    Text(\"タスクをスワイプして削除できます\")
+}
+.padding()
+.background(Color(\"infoColor\").opacity(0.1))
+.cornerRadius(8)
+```
+
+#### 状態カラーの使用ガイドライン
+
+**適切な使用場面**:
+- ✅ **Success**: 操作完了、目標達成、データ保存成功
+- ✅ **Warning**: 期限接近、容量不足、確認推奨
+- ✅ **Error**: バリデーションエラー、操作失敗、システムエラー
+- ✅ **Info**: 使い方のヒント、機能説明、中立的な通知
+
+**避けるべき使用**:
+- ❌ ブランドカラーとしての使用（状態表現に限定）
+- ❌ 装飾目的のみでの使用
+- ❌ 複数の状態カラーを同時に使用（混乱を招く）
+
+### 背景レイヤー (Background Layers)
+
+背景レイヤーは、UIの階層構造と深度を表現するために使用します。3段階のレイヤーを定義し、コンテンツの重要度と視覚的な分離を実現します。
+
+#### プライマリ背景 (Primary Background)
+
+アプリケーションの最も基本的な背景色です。画面全体のベース色として使用します。
+
+| モード | カラー値 | 用途 |
+|--------|---------|------|
+| Light | `#FFFFFF` (System Background) | 画面全体の基本背景 |
+| Dark | `#000000` (System Background) | 画面全体の基本背景 |
+
+**使用例**:
+- メイン画面の背景
+- リスト画面の背景
+- フォーム画面の背景
+
+```swift
+// SwiftUI実装例
+ZStack {
+    Color(\"backgroundPrimary\")
+        .ignoresSafeArea()
+
+    VStack {
+        // コンテンツ
+    }
+}
+```
+
+#### セカンダリ背景 (Secondary Background)
+
+プライマリ背景の上に配置されるコンテンツグループやカードの背景色です。
+
+| モード | カラー値 | 用途 |
+|--------|---------|------|
+| Light | `#F2F2F7` (System Grouped Background) | カード、グループ化されたコンテンツ |
+| Dark | `#1C1C1E` (System Grouped Background) | カード、グループ化されたコンテンツ |
+
+**使用例**:
+- カードコンポーネントの背景
+- グループ化されたリストアイテム
+- セクション分けされた領域
+
+```swift
+// SwiftUI実装例
+VStack(spacing: 16) {
+    ForEach(tasks) { task in
+        TaskCardView(task: task)
+            .background(Color(\"backgroundSecondary\"))
+            .cornerRadius(12)
+            .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
+    }
+}
+.padding()
+.background(Color(\"backgroundPrimary\"))
+```
+
+#### ターシャリ背景 (Tertiary Background)
+
+セカンダリ背景の上にさらに配置される、より細かいコンテンツの背景色です。
+
+| モード | カラー値 | 用途 |
+|--------|---------|------|
+| Light | `#FFFFFF` (System Tertiary Background) | 入力フィールド、ネストされた要素 |
+| Dark | `#2C2C2E` (System Tertiary Background) | 入力フィールド、ネストされた要素 |
+
+**使用例**:
+- カード内の入力フィールド背景
+- ネストされたコンテンツ領域
+- セカンダリ背景内でのさらなる区分け
+
+```swift
+// SwiftUI実装例
+VStack(spacing: 12) {
+    Text(\"タスク詳細\")
+        .font(.headline)
+
+    // ターシャリ背景を使用した入力フィールド
+    TextField(\"タスク名\", text: $taskName)
+        .padding()
+        .background(Color(\"backgroundTertiary\"))
+        .cornerRadius(8)
+}
+.padding()
+.background(Color(\"backgroundSecondary\"))
+.cornerRadius(12)
+```
+
+#### 背景レイヤーの使用ガイドライン
+
+**階層の原則**:
+1. **Primary → Secondary → Tertiary** の順で深度を表現
+2. 各レイヤーは前のレイヤーの上に配置される
+3. 深度の違いで視覚的なグルーピングを実現
+
+**適切な使用場面**:
+- ✅ **Primary**: 画面全体の基本背景、ベースとなるビュー
+- ✅ **Secondary**: カード、リストアイテム、セクション区切り
+- ✅ **Tertiary**: 入力フィールド、ネストされた詳細情報
+
+**ベストプラクティス**:
+```swift
+// ✅ DO: 階層に応じた背景レイヤー
+ScrollView {
+    VStack(spacing: 16) {
+        ForEach(sections) { section in
+            VStack(alignment: .leading, spacing: 8) {
+                Text(section.title)
+                    .font(.headline)
+
+                ForEach(section.items) { item in
+                    HStack {
+                        Text(item.name)
+                        Spacer()
+                        TextField(\"値\", text: $item.value)
+                            .padding(8)
+                            .background(Color(\"backgroundTertiary\")) // 3層目
+                            .cornerRadius(6)
+                    }
+                }
+            }
+            .padding()
+            .background(Color(\"backgroundSecondary\")) // 2層目
+            .cornerRadius(12)
+        }
+    }
+    .padding()
+}
+.background(Color(\"backgroundPrimary\")) // 1層目
+
+// ❌ DON'T: 階層を飛ばす
+VStack {
+    TextField(\"入力\", text: $text)
+        .background(Color(\"backgroundTertiary\")) // ❌ Secondaryを飛ばしている
+}
+.background(Color(\"backgroundPrimary\"))
+```
+
+#### Assets.xcassetsでの実装
+
+状態カラーと背景レイヤーも、ブランドカラーと同様にAssets.xcassetsで定義します。
+
+**追加するColor Sets**:
+```
+Assets.xcassets/
+├── successColor (Color Set)
+├── warningColor (Color Set)
+├── errorColor (Color Set)
+├── infoColor (Color Set)
+├── backgroundPrimary (Color Set)
+├── backgroundSecondary (Color Set)
+└── backgroundTertiary (Color Set)
+```
+
+**SwiftUIでの一括定義** (推奨):
+```swift
+extension Color {
+    // ブランドカラー
+    static let primaryColor = Color(\"primaryColor\")
+    static let secondaryColor = Color(\"secondaryColor\")
+    static let accentColor = Color(\"accentColor\")
+
+    // 状態カラー
+    static let successColor = Color(\"successColor\")
+    static let warningColor = Color(\"warningColor\")
+    static let errorColor = Color(\"errorColor\")
+    static let infoColor = Color(\"infoColor\")
+
+    // 背景レイヤー
+    static let backgroundPrimary = Color(\"backgroundPrimary\")
+    static let backgroundSecondary = Color(\"backgroundSecondary\")
+    static let backgroundTertiary = Color(\"backgroundTertiary\")
+}
+```
+
 ---
 
 ## タイポグラフィ
