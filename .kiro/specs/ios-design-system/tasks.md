@@ -29,7 +29,7 @@
   - 状態カラーの使用ガイドラインを記述
   - _Requirements: 1.3, 1.4_
 
-- [ ] 2.3 SwiftUI実装ガイドを作成する
+- [x] 2.3 SwiftUI実装ガイドを作成する
   - Assets.xcassetsでのColor Set設定手順を記述
   - SwiftUIでのカラー参照方法のコード例を提供
   - Dynamic Color対応の実装パターンを説明

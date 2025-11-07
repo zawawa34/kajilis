@@ -589,6 +589,419 @@ extension Color {
 }
 ```
 
+### SwiftUI実装ガイド（統合）
+
+このセクションでは、Kajilisカラーシステム全体をSwiftUIプロジェクトに実装する手順を包括的に説明します。
+
+#### ステップ1: Assets.xcassetsでColor Setsを作成
+
+Xcodeプロジェクトで、すべてのカラートークンをColor Setとして定義します。
+
+**手順**:
+
+1. **Xcodeでプロジェクトを開く**
+   ```bash
+   cd ios
+   open kajilis.xcodeproj
+   ```
+
+2. **Assets.xcassetsを選択**
+   - プロジェクトナビゲーターで`Assets.xcassets`をクリック
+
+3. **Color Setを追加**
+   - Assets.xcassetsの空白エリアで右クリック
+   - **New Color Set**を選択
+   - Color Setの名前を入力（例: `primaryColor`）
+
+4. **Appearanceを設定**
+   - Attributes Inspector（右サイドバー）を開く
+   - **Appearances**を**Any, Light, Dark**に設定
+
+5. **カラー値を設定**
+   - **Light Appearance**をクリックし、カラー値を入力（例: `#007AFF`）
+   - **Dark Appearance**をクリックし、カラー値を入力（例: `#0A84FF`）
+
+**作成するColor Sets一覧**:
+
+```
+Assets.xcassets/
+├── ブランドカラー
+│   ├── primaryColor (Light: #007AFF, Dark: #0A84FF)
+│   ├── secondaryColor (Light: #FF9500, Dark: #FF9F0A)
+│   └── accentColor (Light: #34C759, Dark: #30D158)
+├── 状態カラー
+│   ├── successColor (Light: #34C759, Dark: #30D158)
+│   ├── warningColor (Light: #FF9500, Dark: #FF9F0A)
+│   ├── errorColor (Light: #FF3B30, Dark: #FF453A)
+│   └── infoColor (Light: #007AFF, Dark: #0A84FF)
+└── 背景レイヤー
+    ├── backgroundPrimary (Light: #FFFFFF, Dark: #000000)
+    ├── backgroundSecondary (Light: #F2F2F7, Dark: #1C1C1E)
+    └── backgroundTertiary (Light: #FFFFFF, Dark: #2C2C2E)
+```
+
+**注意**: `successColor`と`accentColor`、`warningColor`と`secondaryColor`、`infoColor`と`primaryColor`は同じカラー値ですが、セマンティックな意味が異なるため、別々のColor Setとして定義します。
+
+#### ステップ2: Color拡張を作成
+
+SwiftUIプロジェクトに`Color+Extensions.swift`ファイルを作成し、カラートークンを型安全にアクセスできるようにします。
+
+**ファイルの作成**:
+
+1. Xcodeでプロジェクトナビゲーターを開く
+2. `kajilis`グループを右クリック → **New File...**
+3. **Swift File**を選択 → **Next**
+4. ファイル名を`Color+Extensions.swift`に設定 → **Create**
+
+**実装コード**:
+
+```swift
+//
+//  Color+Extensions.swift
+//  kajilis
+//
+//  Kajilisデザインシステムのカラートークン拡張
+//
+
+import SwiftUI
+
+extension Color {
+    // MARK: - ブランドカラー
+
+    /// プライマリカラー - 主要なアクションとブランドアイデンティティ
+    /// - Light: #007AFF, Dark: #0A84FF
+    static let primaryColor = Color("primaryColor")
+
+    /// セカンダリカラー - 補助的なUIエレメント
+    /// - Light: #FF9500, Dark: #FF9F0A
+    static let secondaryColor = Color("secondaryColor")
+
+    /// アクセントカラー - 成功状態とポジティブなフィードバック
+    /// - Light: #34C759, Dark: #30D158
+    static let accentColor = Color("accentColor")
+
+    // MARK: - 状態カラー
+
+    /// 成功カラー - 操作成功とポジティブなフィードバック
+    /// - Light: #34C759, Dark: #30D158
+    static let successColor = Color("successColor")
+
+    /// 警告カラー - 注意が必要な状況
+    /// - Light: #FF9500, Dark: #FF9F0A
+    static let warningColor = Color("warningColor")
+
+    /// エラーカラー - エラーと失敗した操作
+    /// - Light: #FF3B30, Dark: #FF453A
+    static let errorColor = Color("errorColor")
+
+    /// 情報カラー - 中立的な情報とヒント
+    /// - Light: #007AFF, Dark: #0A84FF
+    static let infoColor = Color("infoColor")
+
+    // MARK: - 背景レイヤー
+
+    /// プライマリ背景 - 画面全体の基本背景
+    /// - Light: #FFFFFF, Dark: #000000
+    static let backgroundPrimary = Color("backgroundPrimary")
+
+    /// セカンダリ背景 - カードとグループ化されたコンテンツ
+    /// - Light: #F2F2F7, Dark: #1C1C1E
+    static let backgroundSecondary = Color("backgroundSecondary")
+
+    /// ターシャリ背景 - 入力フィールドとネストされた要素
+    /// - Light: #FFFFFF, Dark: #2C2C2E
+    static let backgroundTertiary = Color("backgroundTertiary")
+}
+```
+
+**ベストプラクティス**:
+- ✅ 各カラーにドキュメントコメントを追加し、用途とカラー値を明記
+- ✅ MARK コメントでカラーをグループ化し、可読性を向上
+- ✅ 静的プロパティとして定義し、`.primaryColor`のように簡潔にアクセス
+
+#### ステップ3: SwiftUIビューでカラーを使用
+
+定義したカラートークンをSwiftUIビューで使用します。
+
+**基本的な使用例**:
+
+```swift
+import SwiftUI
+
+struct TaskRowView: View {
+    let task: Task
+
+    var body: some View {
+        HStack {
+            // アイコンにプライマリカラーを適用
+            Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
+                .foregroundStyle(.primaryColor)
+
+            // タスク名
+            Text(task.name)
+                .foregroundStyle(.primary)
+
+            Spacer()
+
+            // 期日が近い場合は警告カラーを表示
+            if task.isDueSoon {
+                Text("期限接近")
+                    .font(.caption)
+                    .foregroundStyle(.warningColor)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(.warningColor.opacity(0.1))
+                    .cornerRadius(4)
+            }
+        }
+        .padding()
+        .background(.backgroundSecondary)
+        .cornerRadius(12)
+    }
+}
+```
+
+**背景レイヤーの階層的使用例**:
+
+```swift
+struct TaskDetailView: View {
+    @State private var taskName = ""
+    @State private var taskDescription = ""
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                // カード（セカンダリ背景）
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("タスク情報")
+                        .font(.headline)
+
+                    // 入力フィールド（ターシャリ背景）
+                    TextField("タスク名", text: $taskName)
+                        .padding()
+                        .background(.backgroundTertiary)
+                        .cornerRadius(8)
+
+                    TextEditor(text: $taskDescription)
+                        .frame(height: 120)
+                        .padding()
+                        .background(.backgroundTertiary)
+                        .cornerRadius(8)
+                }
+                .padding()
+                .background(.backgroundSecondary)
+                .cornerRadius(12)
+
+                // アクションボタン
+                Button {
+                    // 保存処理
+                } label: {
+                    Text("保存")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.primaryColor)
+            }
+            .padding()
+        }
+        .background(.backgroundPrimary)
+    }
+}
+```
+
+**状態カラーの使用例**:
+
+```swift
+struct MessageBannerView: View {
+    enum MessageType {
+        case success, warning, error, info
+
+        var color: Color {
+            switch self {
+            case .success: return .successColor
+            case .warning: return .warningColor
+            case .error: return .errorColor
+            case .info: return .infoColor
+            }
+        }
+
+        var icon: String {
+            switch self {
+            case .success: return "checkmark.circle.fill"
+            case .warning: return "exclamationmark.triangle.fill"
+            case .error: return "xmark.circle.fill"
+            case .info: return "info.circle.fill"
+            }
+        }
+    }
+
+    let type: MessageType
+    let message: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: type.icon)
+                .foregroundStyle(type.color)
+
+            Text(message)
+                .foregroundStyle(.primary)
+
+            Spacer()
+        }
+        .padding()
+        .background(type.color.opacity(0.1))
+        .cornerRadius(8)
+    }
+}
+
+// 使用例
+struct ContentView: View {
+    var body: some View {
+        VStack(spacing: 16) {
+            MessageBannerView(type: .success, message: "タスクを保存しました")
+            MessageBannerView(type: .warning, message: "期限まであと1日です")
+            MessageBannerView(type: .error, message: "保存に失敗しました")
+            MessageBannerView(type: .info, message: "タスクをスワイプして削除できます")
+        }
+        .padding()
+    }
+}
+```
+
+#### ステップ4: Dynamic Colorの動作確認
+
+Assets.xcassetsで定義したColor Setは、自動的にiOSのライト/ダークモード切り替えに対応します。
+
+**動作確認手順**:
+
+1. **シミュレーターでアプリを起動**
+2. **ライトモードで表示を確認**
+   - シミュレーターのSettings → Developer → Dark Appearance = OFF
+3. **ダークモードで表示を確認**
+   - シミュレーターのSettings → Developer → Dark Appearance = ON
+4. **カラーが自動的に切り替わることを確認**
+
+**プレビューでの確認**:
+
+SwiftUIプレビューで両モードを同時に確認できます。
+
+```swift
+#Preview {
+    VStack {
+        TaskRowView(task: Task.sample)
+    }
+    .padding()
+}
+
+#Preview("Dark Mode") {
+    VStack {
+        TaskRowView(task: Task.sample)
+    }
+    .padding()
+    .preferredColorScheme(.dark)
+}
+```
+
+#### ステップ5: カラーアクセシビリティの検証
+
+実装したカラーがアクセシビリティ基準を満たしていることを確認します。
+
+**検証方法**:
+
+1. **Xcode Accessibility Inspector**
+   - Xcode → Open Developer Tool → Accessibility Inspector
+   - シミュレーターまたは実機でアプリを起動
+   - Accessibility Inspectorで要素を選択
+   - Color Contrast Ratioを確認（4.5:1以上が必須）
+
+2. **VoiceOverでの動作確認**
+   - シミュレーターでVoiceOverを有効化（Settings → Accessibility → VoiceOver）
+   - カラーのみで情報を伝えていないことを確認
+   - すべてのインタラクティブ要素にラベルがあることを確認
+
+3. **Dynamic Typeのテスト**
+   - シミュレーターでフォントサイズを変更（Settings → Accessibility → Display & Text Size → Larger Text）
+   - レイアウトが破綻しないことを確認
+
+**アクセシビリティベストプラクティス**:
+
+```swift
+// ✅ DO: カラーとアイコンの両方で情報を伝える
+HStack {
+    Image(systemName: "exclamationmark.triangle.fill")
+        .foregroundStyle(.warningColor)
+    Text("期限まであと1日です")
+}
+
+// ❌ DON'T: カラーのみで情報を伝える
+Text("期限まであと1日です")
+    .foregroundStyle(.warningColor) // VoiceOverユーザーには伝わらない
+```
+
+```swift
+// ✅ DO: 十分なコントラスト比を確保
+Text("重要な情報")
+    .foregroundStyle(.primary) // システム標準色（アクセシブル）
+    .background(.backgroundSecondary)
+
+// ❌ DON'T: 低コントラスト比
+Text("重要な情報")
+    .foregroundStyle(.gray.opacity(0.5)) // 読みにくい
+    .background(.backgroundSecondary)
+```
+
+#### トラブルシューティング
+
+**問題1: カラーが表示されない**
+
+**原因**: Color Setの名前がコードと一致していない
+
+**解決方法**:
+```swift
+// Assets.xcassetsでのColor Set名を確認
+// "primaryColor" と正確に一致している必要がある
+Color("primaryColor") // ✅ 正しい
+Color("PrimaryColor") // ❌ 大文字小文字が異なる
+Color("primary-color") // ❌ ハイフンが含まれている
+```
+
+**問題2: ダークモードでカラーが切り替わらない**
+
+**原因**: Appearancesが正しく設定されていない
+
+**解決方法**:
+1. Assets.xcassetsでColor Setを選択
+2. Attributes Inspectorで**Appearances**を確認
+3. **Any, Light, Dark**に設定されていることを確認
+4. Light AppearanceとDark Appearanceに異なる値が設定されていることを確認
+
+**問題3: Xcodeでカラーのオートコンプリートが効かない**
+
+**原因**: Color拡張が認識されていない
+
+**解決方法**:
+1. プロジェクトをクリーンビルド（Product → Clean Build Folder）
+2. Derived Dataを削除（Xcode → Preferences → Locations → Derived Data → 削除）
+3. Xcodeを再起動
+
+#### まとめ
+
+このガイドに従うことで、Kajilisカラーシステムを完全にSwiftUIプロジェクトに実装できます。
+
+**実装チェックリスト**:
+- [ ] Assets.xcassetsに10個のColor Setを作成
+- [ ] 各Color SetでLight/Dark Appearanceを設定
+- [ ] `Color+Extensions.swift`を作成
+- [ ] 10個のカラートークンをstatic propertyとして定義
+- [ ] SwiftUIビューでカラートークンを使用
+- [ ] Dynamic Colorの動作を確認
+- [ ] アクセシビリティ検証を実施
+
+**次のステップ**:
+- タイポグラフィシステムの実装（次のセクション）
+- スペーシングシステムの実装
+- コンポーネントライブラリの構築
+
 ---
 
 ## タイポグラフィ
