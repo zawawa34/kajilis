@@ -2557,6 +2557,736 @@ Kajilisのスペーシングシステムは、8ptグリッドベースの9段階
 - コンポーネントライブラリでのスペーシング適用
 - 実際の画面実装でのスペーシングテスト
 
+### SwiftUI実装ガイド
+
+#### ステップ1: スペーシング定数の定義（オプション）
+
+コード全体でスペーシング値を統一するために、CGFloat拡張を定義することを推奨します。
+
+```swift
+// Utilities/DesignSystem+Spacing.swift
+import SwiftUI
+
+extension CGFloat {
+    // スペーシングスケール
+    static let spacingXXXS: CGFloat = 2
+    static let spacingXXS: CGFloat = 4
+    static let spacingXS: CGFloat = 8
+    static let spacingS: CGFloat = 12
+    static let spacingM: CGFloat = 16
+    static let spacingL: CGFloat = 24
+    static let spacingXL: CGFloat = 32
+    static let spacingXXL: CGFloat = 48
+    static let spacingXXXL: CGFloat = 64
+}
+```
+
+**使用例**:
+```swift
+VStack(spacing: .spacingM) {
+    TaskRowView(task: task1)
+    TaskRowView(task: task2)
+}
+.padding(.spacingM)
+```
+
+**利点**:
+- タイポの防止（`16`の代わりに`.spacingM`を使用）
+- 一貫性の確保（デザインシステム準拠）
+- メンテナンス性の向上（一箇所で値を変更可能）
+
+---
+
+#### ステップ2: `.padding()` Modifierの使用
+
+`.padding()`は、ビュー周囲の余白を設定します。
+
+**基本的な使用方法**:
+
+```swift
+// すべての辺に同じパディングを適用
+Text("タスク管理")
+    .padding(16) // m: 標準的な画面パディング
+
+// 特定の辺にのみパディングを適用
+Text("タスク管理")
+    .padding(.horizontal, 16)
+    .padding(.vertical, 24)
+
+// 異なる辺に異なるパディングを適用
+Text("タスク管理")
+    .padding(.leading, 16)
+    .padding(.trailing, 16)
+    .padding(.top, 24)
+    .padding(.bottom, 8)
+```
+
+**推奨パターン**:
+
+```swift
+// 画面全体のコンテンツパディング
+ScrollView {
+    VStack(spacing: 16) {
+        // コンテンツ
+    }
+    .padding(16) // m: 標準的な画面パディング
+}
+
+// カード内のパディング
+VStack(alignment: .leading, spacing: 8) {
+    Text("タスク名")
+        .font(.headline)
+    Text("タスクの説明")
+        .font(.subheadline)
+}
+.padding(12) // s: カード内パディング
+.background(Color(.secondarySystemBackground))
+.cornerRadius(12)
+
+// ボタン内のパディング
+Button {
+    // アクション
+} label: {
+    Text("保存")
+        .padding(.horizontal, 24) // l: ボタン水平パディング
+        .padding(.vertical, 12)   // s: ボタン垂直パディング
+}
+```
+
+---
+
+#### ステップ3: `.spacing()` Modifierの使用
+
+`.spacing()`は、VStackやHStack内の子ビュー間の間隔を設定します。
+
+**基本的な使用方法**:
+
+```swift
+// VStack内の間隔設定
+VStack(spacing: 16) { // m: 標準的なコンポーネント間隔
+    Text("タスク1")
+    Text("タスク2")
+    Text("タスク3")
+}
+
+// HStack内の間隔設定
+HStack(spacing: 8) { // xs: 関連要素の間隔
+    Image(systemName: "checkmark.circle")
+    Text("完了")
+}
+
+// 間隔なし（明示的）
+VStack(spacing: 0) {
+    Text("タイトル")
+    Divider()
+    Text("コンテンツ")
+}
+```
+
+**階層的な間隔設定**:
+
+```swift
+VStack(spacing: 24) { // l: セクション間隔
+    // セクション1
+    VStack(alignment: .leading, spacing: 8) { // xs: 同一セクション内
+        Text("今日のタスク")
+            .font(.headline)
+        TaskRowView(task: task1)
+        TaskRowView(task: task2)
+    }
+
+    // セクション2
+    VStack(alignment: .leading, spacing: 8) {
+        Text("明日のタスク")
+            .font(.headline)
+        TaskRowView(task: task3)
+        TaskRowView(task: task4)
+    }
+}
+.padding(16) // m: 画面パディング
+```
+
+---
+
+#### ステップ4: リスト画面のスペーシング実装
+
+**List使用時**:
+
+```swift
+List {
+    ForEach(tasks) { task in
+        TaskRowView(task: task)
+            .listRowInsets(EdgeInsets(
+                top: 8,      // xs: 行の上下余白
+                leading: 16, // m: 左右余白
+                bottom: 8,
+                trailing: 16
+            ))
+    }
+}
+.listStyle(.plain)
+```
+
+**ScrollView + LazyVStack使用時**:
+
+```swift
+ScrollView {
+    LazyVStack(spacing: 12) { // s: リストアイテム間隔
+        ForEach(tasks) { task in
+            TaskRowView(task: task)
+                .padding(.horizontal, 16) // m: 左右余白
+        }
+    }
+    .padding(.vertical, 16) // m: 上下余白
+}
+```
+
+---
+
+#### ステップ5: フォーム画面のスペーシング実装
+
+```swift
+ScrollView {
+    VStack(alignment: .leading, spacing: 24) { // l: フォームフィールド間隔
+        // タスク名入力
+        VStack(alignment: .leading, spacing: 8) { // xs: ラベルとフィールド間隔
+            Text("タスク名")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            TextField("タスクを入力", text: $taskName)
+                .textFieldStyle(.roundedBorder)
+        }
+
+        // 期限設定
+        VStack(alignment: .leading, spacing: 8) {
+            Text("期限")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            DatePicker("", selection: $dueDate, displayedComponents: .date)
+                .labelsHidden()
+        }
+
+        // 説明入力
+        VStack(alignment: .leading, spacing: 8) {
+            Text("説明")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            TextEditor(text: $description)
+                .frame(height: 120)
+                .border(Color(.separator))
+        }
+    }
+    .padding(16) // m: 画面パディング
+}
+```
+
+---
+
+#### ステップ6: グリッドレイアウトのスペーシング実装
+
+```swift
+ScrollView {
+    LazyVGrid(
+        columns: [
+            GridItem(.flexible(), spacing: 12), // s: カラム間隔
+            GridItem(.flexible(), spacing: 12)
+        ],
+        spacing: 12 // s: 行間隔
+    ) {
+        ForEach(items) { item in
+            ItemCardView(item: item)
+        }
+    }
+    .padding(16) // m: 画面パディング
+}
+```
+
+---
+
+#### ステップ7: 詳細画面のスペーシング実装
+
+```swift
+ScrollView {
+    VStack(alignment: .leading, spacing: 32) { // xl: セクション間隔
+        // ヘッダーセクション
+        VStack(alignment: .leading, spacing: 8) { // xs: 同一情報のグループ
+            Text("タスク詳細")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+            Text("2025年11月7日作成")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+
+        // 内容セクション
+        VStack(alignment: .leading, spacing: 12) { // s: 関連情報のグループ
+            Text("タスク名")
+                .font(.headline)
+            Text("タスクの説明がここに入ります...")
+                .font(.body)
+        }
+
+        // ステータスセクション
+        VStack(alignment: .leading, spacing: 12) {
+            Text("ステータス")
+                .font(.headline)
+            HStack(spacing: 8) { // xs: アイコンとテキスト
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                Text("完了")
+            }
+        }
+    }
+    .padding(16) // m: 画面パディング
+}
+```
+
+---
+
+#### ステップ8: コンポーネント固有のスペーシングパターン
+
+**ボタンコンポーネント**:
+
+```swift
+Button {
+    // アクション
+} label: {
+    HStack(spacing: 8) { // xs: アイコンとテキストの間隔
+        Image(systemName: "plus")
+        Text("新しいタスク")
+    }
+    .padding(.horizontal, 24) // l: ボタン水平パディング
+    .padding(.vertical, 12)   // s: ボタン垂直パディング
+}
+.background(Color.accentColor)
+.foregroundStyle(.white)
+.cornerRadius(8)
+```
+
+**カードコンポーネント**:
+
+```swift
+VStack(alignment: .leading, spacing: 12) { // s: カード内要素間隔
+    HStack(spacing: 8) { // xs: アイコンとタイトル
+        Image(systemName: "checkmark.circle")
+        Text("タスク名")
+            .font(.headline)
+    }
+
+    Text("タスクの説明")
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
+
+    HStack(spacing: 16) { // m: メタ情報間隔
+        Label("期限: 11/7", systemImage: "calendar")
+        Label("高", systemImage: "exclamationmark.circle")
+    }
+    .font(.caption)
+}
+.padding(16) // m: カード内パディング
+.background(Color(.secondarySystemBackground))
+.cornerRadius(12)
+```
+
+**リストアイテムコンポーネント**:
+
+```swift
+HStack(spacing: 12) { // s: リストアイテム内の主要要素間隔
+    Image(systemName: "circle")
+        .frame(width: 24, height: 24)
+
+    VStack(alignment: .leading, spacing: 4) { // xxs: 密接に関連したテキスト
+        Text("タスク名")
+            .font(.body)
+        Text("期限: 2025/11/7")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+    }
+
+    Spacer()
+
+    Image(systemName: "chevron.right")
+        .foregroundStyle(.tertiary)
+}
+.padding(.vertical, 12)   // s: 上下パディング
+.padding(.horizontal, 16) // m: 左右パディング
+```
+
+**モーダルコンポーネント**:
+
+```swift
+VStack(spacing: 24) { // l: モーダル内セクション間隔
+    // ヘッダー
+    HStack {
+        Text("新しいタスク")
+            .font(.headline)
+        Spacer()
+        Button("閉じる") { }
+    }
+
+    // コンテンツ
+    VStack(spacing: 16) { // m: フォームフィールド間隔
+        TextField("タスク名", text: $taskName)
+        TextField("説明", text: $description)
+    }
+
+    // アクション
+    HStack(spacing: 12) { // s: ボタン間隔
+        Button("キャンセル") { }
+        Button("保存") { }
+    }
+}
+.padding(24) // l: モーダル内パディング
+```
+
+---
+
+#### ステップ9: Safe Areaとの組み合わせ
+
+```swift
+// Safe Areaを考慮したスペーシング
+VStack(spacing: 0) {
+    // ナビゲーションバー領域
+    HStack {
+        Text("タスク管理")
+            .font(.largeTitle)
+            .fontWeight(.bold)
+        Spacer()
+    }
+    .padding(16) // m: ナビゲーションバー内パディング
+    .background(Color(.systemBackground))
+
+    // コンテンツ領域
+    ScrollView {
+        VStack(spacing: 16) {
+            // コンテンツ
+        }
+        .padding(16)
+    }
+}
+.ignoresSafeArea(edges: .bottom)
+
+// タブバー上のフローティングボタン
+ZStack {
+    // メインコンテンツ
+
+    VStack {
+        Spacer()
+        Button {
+            // アクション
+        } label: {
+            Image(systemName: "plus")
+                .font(.title2)
+                .padding(16)
+                .background(Color.accentColor)
+                .foregroundStyle(.white)
+                .clipShape(Circle())
+        }
+        .padding(24) // l: 画面端からのパディング
+        .padding(.bottom, 8) // xs: タブバーとの間隔
+    }
+}
+```
+
+---
+
+#### ステップ10: Dynamic Typeとスペーシングの組み合わせ
+
+Dynamic Typeのサイズが大きい場合、スペーシングも適切に調整する必要があります。
+
+```swift
+@Environment(\.dynamicTypeSize) var dynamicTypeSize
+
+var spacing: CGFloat {
+    switch dynamicTypeSize {
+    case .xSmall, .small, .medium:
+        return 12 // s: 標準サイズ
+    case .large, .xLarge, .xxLarge:
+        return 16 // m: 大きめのサイズ
+    case .xxxLarge, .accessibility1, .accessibility2:
+        return 20 // 調整されたサイズ
+    default:
+        return 24 // l: アクセシビリティサイズ
+    }
+}
+
+var body: some View {
+    VStack(spacing: spacing) {
+        Text("タスク1")
+        Text("タスク2")
+        Text("タスク3")
+    }
+    .padding(spacing)
+}
+```
+
+---
+
+#### コンポーネント間余白の推奨値
+
+| コンポーネント間の関係 | 推奨スペーシング | 値 |
+|-------------------|----------------|-----|
+| アイコンとテキスト（同一要素内） | xs | 8pt |
+| ラベルと入力フィールド | xs | 8pt |
+| リストアイテム間 | s | 12pt |
+| フォームフィールド間 | l | 24pt |
+| セクション間 | xl | 32pt |
+| 画面パディング | m | 16pt |
+| カード内パディング | m | 16pt |
+| ボタン内パディング（水平） | l | 24pt |
+| ボタン内パディング（垂直） | s | 12pt |
+| モーダル内パディング | l | 24pt |
+
+---
+
+#### レイアウトパターン別のスペーシング例
+
+**パターン1: シンプルなリスト画面**:
+
+```swift
+NavigationStack {
+    List {
+        ForEach(tasks) { task in
+            TaskRowView(task: task)
+                .listRowInsets(EdgeInsets(
+                    top: 8,
+                    leading: 16,
+                    bottom: 8,
+                    trailing: 16
+                ))
+        }
+    }
+    .navigationTitle("タスク")
+}
+```
+
+**パターン2: セクション分けされたリスト画面**:
+
+```swift
+ScrollView {
+    VStack(spacing: 32) { // xl: セクション間
+        // 今日のタスクセクション
+        VStack(alignment: .leading, spacing: 12) { // s: セクション内
+            Text("今日のタスク")
+                .font(.title2)
+                .fontWeight(.bold)
+
+            VStack(spacing: 8) { // xs: リストアイテム間
+                TaskRowView(task: task1)
+                TaskRowView(task: task2)
+            }
+        }
+
+        // 明日のタスクセクション
+        VStack(alignment: .leading, spacing: 12) {
+            Text("明日のタスク")
+                .font(.title2)
+                .fontWeight(.bold)
+
+            VStack(spacing: 8) {
+                TaskRowView(task: task3)
+                TaskRowView(task: task4)
+            }
+        }
+    }
+    .padding(16) // m: 画面パディング
+}
+```
+
+**パターン3: 詳細画面**:
+
+```swift
+ScrollView {
+    VStack(alignment: .leading, spacing: 32) { // xl: 大きなセクション間
+        // タイトルセクション
+        VStack(alignment: .leading, spacing: 8) { // xs: 関連情報
+            Text("タスク管理アプリの設計")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+
+            HStack(spacing: 12) { // s: メタデータ間
+                Label("2025/11/7", systemImage: "calendar")
+                Label("高", systemImage: "exclamationmark.circle")
+            }
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+        }
+
+        Divider()
+
+        // 説明セクション
+        VStack(alignment: .leading, spacing: 12) { // s: セクション内
+            Text("説明")
+                .font(.headline)
+            Text("このタスクでは、タスク管理アプリの基本設計を行います...")
+                .font(.body)
+        }
+
+        Divider()
+
+        // ステータスセクション
+        VStack(alignment: .leading, spacing: 12) {
+            Text("ステータス")
+                .font(.headline)
+
+            HStack(spacing: 8) { // xs: アイコンとテキスト
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                Text("完了")
+            }
+        }
+    }
+    .padding(16) // m: 画面パディング
+}
+```
+
+**パターン4: フォーム画面**:
+
+```swift
+Form {
+    Section {
+        TextField("タスク名", text: $taskName)
+        DatePicker("期限", selection: $dueDate)
+    } header: {
+        Text("基本情報")
+    }
+
+    Section {
+        Picker("優先度", selection: $priority) {
+            Text("低").tag(0)
+            Text("中").tag(1)
+            Text("高").tag(2)
+        }
+        Toggle("リマインダー", isOn: $reminderEnabled)
+    } header: {
+        Text("設定")
+    }
+
+    Section {
+        TextEditor(text: $description)
+            .frame(minHeight: 100)
+    } header: {
+        Text("説明")
+    }
+}
+// Form内では自動的に適切なスペーシングが適用される
+```
+
+---
+
+### ベストプラクティス
+
+#### DO（推奨）
+
+✅ **スペーシング定数を使用する**:
+```swift
+VStack(spacing: .spacingM) {
+    Text("タスク1")
+}
+.padding(.spacingM)
+```
+
+✅ **階層的なスペーシングを使用する**:
+```swift
+VStack(spacing: 32) { // 大きなセクション間
+    VStack(spacing: 16) { // セクション内
+        VStack(spacing: 8) { // 密接に関連した要素
+            Text("タイトル")
+            Text("サブタイトル")
+        }
+    }
+}
+```
+
+✅ **用途に応じたスペーシングを選択する**:
+```swift
+// アイコンとテキスト: xs (8pt)
+HStack(spacing: 8) {
+    Image(systemName: "star")
+    Text("お気に入り")
+}
+
+// フォームフィールド間: l (24pt)
+VStack(spacing: 24) {
+    TextField("名前", text: $name)
+    TextField("メール", text: $email)
+}
+```
+
+✅ **Dynamic Typeに応じてスペーシングを調整する**:
+```swift
+@Environment(\.dynamicTypeSize) var dynamicTypeSize
+
+var spacing: CGFloat {
+    dynamicTypeSize >= .accessibility1 ? 24 : 16
+}
+```
+
+#### DON'T（非推奨）
+
+❌ **マジックナンバーを直接使用しない**:
+```swift
+// 悪い例
+VStack(spacing: 15) { // なぜ15なのか不明
+    Text("タスク1")
+}
+.padding(19) // なぜ19なのか不明
+```
+
+❌ **グリッドシステムから外れた値を使用しない**:
+```swift
+// 悪い例
+VStack(spacing: 13) { // 8ptグリッドに合わない
+    Text("タスク1")
+}
+```
+
+❌ **すべての要素に同じスペーシングを適用しない**:
+```swift
+// 悪い例
+VStack(spacing: 16) { // すべて同じ間隔
+    Text("セクション1のタイトル")
+    Text("セクション1の内容")
+    Text("セクション2のタイトル") // セクション間の区別が不明確
+    Text("セクション2の内容")
+}
+```
+
+❌ **過度にネストしたスペーシングを使用しない**:
+```swift
+// 悪い例
+VStack(spacing: 8) {
+    VStack(spacing: 4) {
+        VStack(spacing: 2) {
+            VStack(spacing: 1) {
+                Text("タスク")
+            }
+        }
+    }
+}
+// シンプルに
+VStack(spacing: 8) {
+    Text("タスク")
+}
+```
+
+---
+
+### 実装チェックリスト
+
+スペーシング実装時に確認すべき項目:
+
+- [ ] スペーシング定数（CGFloat拡張）を定義している
+- [ ] 8ptグリッドに準拠したスペーシング値を使用している
+- [ ] 階層的なスペーシング（セクション間 > セクション内 > 要素間）を適用している
+- [ ] コンポーネント固有のスペーシングパターンを実装している
+- [ ] リスト、フォーム、グリッド、詳細画面でそれぞれ適切なスペーシングを使用している
+- [ ] Safe Areaとの組み合わせで適切な余白を確保している
+- [ ] Dynamic Typeに応じてスペーシングを調整している
+- [ ] マジックナンバーを避けて、意味のあるスペーシング定数を使用している
+- [ ] 過度にネストしたスペーシング構造を避けている
+- [ ] SwiftUIプレビューで実際の見た目を確認している
+
 ---
 
 ## コンポーネントライブラリ
