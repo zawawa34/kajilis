@@ -37,7 +37,7 @@
   - _Requirements: 1.5_
 
 - [ ] 3. タイポグラフィシステムを定義する
-- [ ] 3.1 テキストスタイル階層を定義する
+- [x] 3.1 テキストスタイル階層を定義する
   - largeTitle、title、title2、title3、headline、body、callout、subheadline、footnote、captionのスタイルを定義
   - 各スタイルのフォントファミリー、サイズ、ウェイト、行間、文字間を明記
   - テキストスタイルの使用目的と適用場面を説明
