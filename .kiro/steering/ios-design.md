@@ -5122,29 +5122,449 @@ kajilis/
 
 ## レイアウトパターン
 
-<!-- このセクションは今後のタスクで実装 -->
-詳細は今後の実装で追加されます。
+### リスト画面とスクロールパターン
+
+#### ScrollView、List、LazyVStackの使い分け
+
+| コンポーネント | 使用場面 | 特徴 |
+|--------------|---------|------|
+| `List` | 標準的なリスト画面 | スワイプアクション、セクション分け対応 |
+| `ScrollView` + `LazyVStack` | カスタムスクロール | 柔軟なレイアウト、カスタムスタイリング |
+| `ScrollView` + `VStack` | 少数の要素 | シンプルな実装、20個以下の要素向け |
+
+**List使用例**:
+```swift
+NavigationStack {
+    List {
+        ForEach(tasks) { task in
+            TaskCard(task: task)
+        }
+        .onDelete(perform: deleteTasks)
+    }
+    .navigationTitle("タスク")
+}
+```
+
+**LazyVStack使用例**:
+```swift
+ScrollView {
+    LazyVStack(spacing: 12) {
+        ForEach(tasks) { task in
+            TaskCard(task: task)
+        }
+    }
+    .padding(16)
+}
+```
+
+### 詳細画面とフォーム画面のレイアウト
+
+**詳細画面パターン**:
+```swift
+ScrollView {
+    VStack(alignment: .leading, spacing: 32) {
+        // ヘッダーセクション
+        VStack(alignment: .leading, spacing: 8) {
+            Text(task.name)
+                .font(.largeTitle)
+                .fontWeight(.bold)
+            Text("作成日: \(task.createdAt)")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+
+        Divider()
+
+        // 詳細セクション
+        VStack(alignment: .leading, spacing: 12) {
+            Text("説明")
+                .font(.headline)
+            Text(task.description)
+                .font(.body)
+        }
+    }
+    .padding(16)
+}
+.navigationBarTitleDisplayMode(.inline)
+```
+
+**フォーム画面パターン**:
+```swift
+NavigationStack {
+    Form {
+        Section("基本情報") {
+            TextField("タスク名", text: $taskName)
+            DatePicker("期限", selection: $dueDate)
+        }
+
+        Section("設定") {
+            Picker("優先度", selection: $priority) {
+                ForEach(Priority.allCases) { priority in
+                    Text(priority.label).tag(priority)
+                }
+            }
+        }
+    }
+    .navigationTitle("新しいタスク")
+    .toolbar {
+        ToolbarItem(placement: .topBarTrailing) {
+            Button("保存") { saveTask() }
+        }
+    }
+}
+```
+
+### タブ画面とモーダル画面のレイアウト
+
+**TabView パターン**:
+```swift
+TabView {
+    TaskListView()
+        .tabItem {
+            Label("タスク", systemImage: "list.bullet")
+        }
+
+    CalendarView()
+        .tabItem {
+            Label("カレンダー", systemImage: "calendar")
+        }
+
+    SettingsView()
+        .tabItem {
+            Label("設定", systemImage: "gearshape")
+        }
+}
+```
+
+**モーダル画面パターン**:
+```swift
+.sheet(isPresented: $showingModal) {
+    NavigationStack {
+        TaskFormView()
+            .navigationTitle("新しいタスク")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("キャンセル") { showingModal = false }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("保存") { saveAndDismiss() }
+                }
+            }
+    }
+    .presentationDetents([.medium, .large])
+}
+```
+
+### Safe Areaとデバイスサイズ対応
+
+**Safe Area対応**:
+```swift
+// Safe Areaを無視する場合
+ScrollView {
+    content
+}
+.ignoresSafeArea(edges: .bottom)
+
+// Safe Areaに追加コンテンツを配置
+VStack {
+    content
+}
+.safeAreaInset(edge: .bottom) {
+    Button("保存") { save() }
+        .frame(maxWidth: .infinity)
+        .padding()
+        .background(.ultraThinMaterial)
+}
+```
+
+**デバイスサイズ対応**:
+```swift
+@Environment(\.horizontalSizeClass) var horizontalSizeClass
+
+var body: some View {
+    if horizontalSizeClass == .compact {
+        // iPhoneの縦向き
+        CompactLayout()
+    } else {
+        // iPadまたはiPhoneの横向き
+        RegularLayout()
+    }
+}
+```
 
 ---
 
 ## アイコンシステム
 
-<!-- このセクションは今後のタスクで実装 -->
-詳細は今後の実装で追加されます。
+### SF Symbolsの使用
+
+Kajilisでは、AppleのSF Symbolsを優先的に使用します。
+
+**推奨シンボル**:
+- タスク関連: `checkmark.circle`, `circle`, `list.bullet`
+- 日付・時間: `calendar`, `clock`
+- 優先度: `exclamationmark.circle`, `flag`
+- アクション: `plus`, `pencil`, `trash`, `square.and.arrow.up`
+- ナビゲーション: `chevron.right`, `chevron.left`
+
+### アイコンサイズ
+
+| サイズ | ポイント | 使用場面 |
+|--------|---------|---------|
+| Small | 16pt | リストアイテム内、キャプション付き |
+| Medium | 24pt | ボタン、タブバー |
+| Large | 32pt | 大きなアクションボタン、ヘッダー |
+
+**使用例**:
+```swift
+// Small
+Image(systemName: "checkmark.circle")
+    .font(.system(size: 16))
+
+// Medium
+Image(systemName: "plus")
+    .font(.system(size: 24))
+
+// Large
+Image(systemName: "list.bullet")
+    .font(.system(size: 32))
+```
+
+### アイコンのカスタマイズ
+
+```swift
+// 色の変更
+Image(systemName: "checkmark.circle.fill")
+    .foregroundStyle(.green)
+
+// マルチカラー
+Image(systemName: "star.fill")
+    .symbolRenderingMode(.multicolor)
+
+// 階層的表現
+Image(systemName: "heart.fill")
+    .symbolRenderingMode(.hierarchical)
+    .foregroundStyle(.red)
+```
+
+### カスタムアイコン
+
+カスタムアイコンが必要な場合は、`Assets.xcassets`でSVGファイルを管理します。
+
+**ベストプラクティス**:
+- SF Symbolsの32x32ptグリッドに合わせる
+- シンプルな形状を維持
+- 単色または限定的な色数
 
 ---
 
 ## アニメーション
 
-<!-- このセクションは今後のタスクで実装 -->
-詳細は今後の実装で追加されます。
+### アニメーションタイミング
+
+| イージング | 時間 | 使用場面 |
+|-----------|------|---------|
+| `.easeInOut` | 0.3秒 | 標準的な状態変化 |
+| `.easeIn` | 0.2秒 | 要素の消失 |
+| `.easeOut` | 0.3秒 | 要素の表示 |
+| `.spring()` | - | インタラクティブなフィードバック |
+
+**使用例**:
+```swift
+withAnimation(.easeInOut(duration: 0.3)) {
+    isExpanded.toggle()
+}
+
+// スプリングアニメーション
+withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+    isPressed = false
+}
+```
+
+### 画面遷移とトランジション
+
+**標準トランジション**:
+```swift
+Text("メッセージ")
+    .transition(.opacity)
+
+Text("メッセージ")
+    .transition(.slide)
+
+Text("メッセージ")
+    .transition(.scale)
+```
+
+**カスタムトランジション**:
+```swift
+extension AnyTransition {
+    static var fadeAndSlide: AnyTransition {
+        .opacity.combined(with: .move(edge: .trailing))
+    }
+}
+
+Text("メッセージ")
+    .transition(.fadeAndSlide)
+```
+
+### インタラクションフィードバック
+
+**タップフィードバック**:
+```swift
+Button(action: action) {
+    content
+}
+.scaleEffect(isPressed ? 0.95 : 1.0)
+.animation(.spring(response: 0.3), value: isPressed)
+```
+
+**ローディングアニメーション**:
+```swift
+ProgressView()
+    .progressViewStyle(CircularProgressViewStyle(tint: .accentColor))
+    .scaleEffect(1.5)
+```
 
 ---
 
 ## アクセシビリティ
 
-<!-- このセクションは今後のタスクで実装 -->
-詳細は今後の実装で追加されます。
+### VoiceOver対応
+
+**基本的な実装**:
+```swift
+// ラベル
+Image(systemName: "trash")
+    .accessibilityLabel("削除")
+
+// 複合要素
+HStack {
+    Image(systemName: "checkmark.circle")
+    Text(task.name)
+    Text(task.dueDate)
+}
+.accessibilityElement(children: .combine)
+.accessibilityLabel("\(task.name), 期限: \(task.dueDate), 完了")
+
+// ヒント
+Button("保存") { save() }
+    .accessibilityHint("タスクを保存してリストに追加します")
+```
+
+### カラーコントラスト
+
+- **最小比率**: WCAG AA基準 4.5:1以上
+- **推奨比率**: WCAG AAA基準 7:1以上
+- **大きなテキスト**: 3:1以上（18pt以上）
+
+**検証方法**:
+- Xcodeのアクセシビリティインスペクタを使用
+- オンラインツール（WebAIM Contrast Checker）で確認
+
+### Dynamic Typeとタッチターゲット
+
+**Dynamic Type対応**:
+```swift
+Text("タスク名")
+    .font(.body)
+    .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+```
+
+**最小タッチターゲット**:
+```swift
+Button("編集") { edit() }
+    .frame(minWidth: 44, minHeight: 44)
+```
+
+---
+
+## コーディング規約
+
+### Swift命名規則
+
+- **View**: `TaskListView`, `TaskDetailView` (View接尾辞)
+- **ViewModel**: `TaskListViewModel` (ViewModel接尾辞)
+- **Model**: `Task`, `Priority` (接尾辞なし)
+- **Service**: `TaskService`, `APIClient` (Service接尾辞)
+
+### ディレクトリ構成
+
+```
+kajilis/
+├── App/
+│   └── KajilisApp.swift
+├── Views/
+│   ├── TaskListView.swift
+│   ├── TaskDetailView.swift
+│   └── TaskFormView.swift
+├── ViewModels/
+│   ├── TaskListViewModel.swift
+│   └── TaskDetailViewModel.swift
+├── Models/
+│   ├── Task.swift
+│   └── Priority.swift
+├── Components/
+│   ├── Buttons/
+│   │   ├── PrimaryButton.swift
+│   │   └── SecondaryButton.swift
+│   └── Cards/
+│       ├── TaskCard.swift
+│       └── InfoCard.swift
+├── Services/
+│   ├── TaskService.swift
+│   └── APIClient.swift
+└── Utilities/
+    ├── Extensions/
+    └── Helpers/
+```
+
+### SwiftUIプレビュー
+
+**#Previewマクロの使用**:
+```swift
+#Preview {
+    TaskCard(
+        task: Task.sample,
+        onToggle: {},
+        onTap: {}
+    )
+}
+
+#Preview("ダークモード") {
+    TaskCard(task: Task.sample)
+        .preferredColorScheme(.dark)
+}
+
+#Preview("Dynamic Type Large") {
+    TaskCard(task: Task.sample)
+        .environment(\.dynamicTypeSize, .xxxLarge)
+}
+```
+
+---
+
+## まとめ
+
+KajilisiOSデザインシステムv1.0は、一貫性のあるユーザー体験を提供するための包括的なガイドラインです。
+
+### 主要コンポーネント
+
+- **カラーシステム**: ライト/ダークモード対応、セマンティックカラー
+- **タイポグラフィ**: 10段階のテキストスタイル、Dynamic Type対応
+- **スペーシング**: 8ptグリッドベースの9段階スケール
+- **コンポーネント**: ボタン、カード、フォーム、モーダル
+- **レイアウト**: リスト、詳細、フォーム、タブ
+- **アイコン**: SF Symbols優先、3サイズ
+- **アニメーション**: 標準タイミング、スプリングアニメーション
+- **アクセシビリティ**: VoiceOver、Dynamic Type、タッチターゲット
+- **コーディング**: 命名規則、ディレクトリ構成
+
+### 次のステップ
+
+1. `.kiro/steering/ios-design.md`を参照して実装
+2. コンポーネントの実装とテスト
+3. デザインシステムの継続的な改善
 
 ---
 
