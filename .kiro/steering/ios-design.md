@@ -4792,6 +4792,334 @@ kajilis/
 
 ---
 
+### 入力フィールドとフォームコンポーネント
+
+入力フィールドは、ユーザーからデータを収集するための重要なコンポーネントです。Kajilisでは、テキスト入力、セレクタ、トグル、日付ピッカーなどの標準的な入力要素を定義します。
+
+#### 基本的な入力コンポーネント
+
+##### 1. TextField（テキスト入力）
+
+**SwiftUIコード例**:
+```swift
+VStack(alignment: .leading, spacing: 8) {
+    Text("タスク名")
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
+
+    TextField("タスクを入力", text: $taskName)
+        .textFieldStyle(.roundedBorder)
+        .font(.body)
+}
+```
+
+##### 2. TextEditor（複数行テキスト）
+
+```swift
+VStack(alignment: .leading, spacing: 8) {
+    Text("説明")
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
+
+    TextEditor(text: $description)
+        .frame(minHeight: 100)
+        .font(.body)
+        .border(Color(.separator))
+        .cornerRadius(8)
+}
+```
+
+##### 3. Picker（セレクタ）
+
+```swift
+VStack(alignment: .leading, spacing: 8) {
+    Text("優先度")
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
+
+    Picker("優先度", selection: $priority) {
+        Text("低").tag(Priority.low)
+        Text("中").tag(Priority.medium)
+        Text("高").tag(Priority.high)
+    }
+    .pickerStyle(.segmented)
+}
+```
+
+##### 4. Toggle（トグル）
+
+```swift
+Toggle("リマインダーを有効化", isOn: $isReminderEnabled)
+    .font(.body)
+```
+
+##### 5. DatePicker（日付ピッカー）
+
+```swift
+VStack(alignment: .leading, spacing: 8) {
+    Text("期限")
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
+
+    DatePicker("期限", selection: $dueDate, displayedComponents: .date)
+        .datePickerStyle(.compact)
+}
+```
+
+#### 入力コンポーネントの状態
+
+##### 1. Default（通常）
+- 通常の外観、入力可能
+
+##### 2. Focused（フォーカス）
+- ボーダーがaccentColorに変化
+```swift
+TextField("タスク名", text: $taskName)
+    .focused($focusedField, equals: .taskName)
+    .overlay(
+        RoundedRectangle(cornerRadius: 8)
+            .stroke(focusedField == .taskName ? Color.accentColor : Color.clear, lineWidth: 2)
+    )
+```
+
+##### 3. Error（エラー）
+- ボーダーが赤に変化、エラーメッセージ表示
+```swift
+VStack(alignment: .leading, spacing: 4) {
+    TextField("タスク名", text: $taskName)
+        .textFieldStyle(.roundedBorder)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(hasError ? Color.red : Color.clear, lineWidth: 1)
+        )
+
+    if hasError {
+        Text("タスク名は必須です")
+            .font(.caption)
+            .foregroundStyle(.red)
+    }
+}
+```
+
+##### 4. Disabled（無効）
+- グレーアウト、入力不可
+```swift
+TextField("タスク名", text: $taskName)
+    .disabled(true)
+    .opacity(0.6)
+```
+
+#### バリデーションとエラー表示
+
+```swift
+struct TaskFormView: View {
+    @State private var taskName = ""
+    @State private var taskNameError: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("タスク名")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            TextField("タスクを入力", text: $taskName)
+                .textFieldStyle(.roundedBorder)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(taskNameError != nil ? Color.red : Color.clear, lineWidth: 1)
+                )
+                .onChange(of: taskName) { oldValue, newValue in
+                    validateTaskName(newValue)
+                }
+
+            if let error = taskNameError {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+        }
+    }
+
+    func validateTaskName(_ name: String) {
+        if name.isEmpty {
+            taskNameError = "タスク名は必須です"
+        } else if name.count > 100 {
+            taskNameError = "タスク名は100文字以内で入力してください"
+        } else {
+            taskNameError = nil
+        }
+    }
+}
+```
+
+#### フォームレイアウト
+
+```swift
+Form {
+    Section {
+        TextField("タスク名", text: $taskName)
+        DatePicker("期限", selection: $dueDate)
+    } header: {
+        Text("基本情報")
+    }
+
+    Section {
+        Picker("優先度", selection: $priority) {
+            Text("低").tag(0)
+            Text("中").tag(1)
+            Text("高").tag(2)
+        }
+        Toggle("リマインダー", isOn: $reminderEnabled)
+    } header: {
+        Text("設定")
+    }
+}
+```
+
+---
+
+### モーダル、アラート、ナビゲーションバー
+
+#### モーダル表示パターン
+
+##### 1. Sheet（シート）
+
+```swift
+Button("新しいタスク") {
+    showingSheet = true
+}
+.sheet(isPresented: $showingSheet) {
+    TaskFormView()
+}
+```
+
+##### 2. FullScreenCover（フルスクリーン）
+
+```swift
+Button("詳細表示") {
+    showingFullScreen = true
+}
+.fullScreenCover(isPresented: $showingFullScreen) {
+    TaskDetailView()
+}
+```
+
+#### アラートとアクションシート
+
+##### Alert（アラート）
+
+```swift
+Button("削除") {
+    showingAlert = true
+}
+.alert("タスクを削除しますか？", isPresented: $showingAlert) {
+    Button("削除", role: .destructive) {
+        deleteTask()
+    }
+    Button("キャンセル", role: .cancel) { }
+} message: {
+    Text("この操作は取り消せません")
+}
+```
+
+##### ActionSheet（アクションシート）
+
+```swift
+Button("オプション") {
+    showingActionSheet = true
+}
+.confirmationDialog("タスクのオプション", isPresented: $showingActionSheet) {
+    Button("編集") { editTask() }
+    Button("複製") { duplicateTask() }
+    Button("削除", role: .destructive) { deleteTask() }
+    Button("キャンセル", role: .cancel) { }
+}
+```
+
+#### ナビゲーションバー
+
+```swift
+NavigationStack {
+    List(tasks) { task in
+        TaskRowView(task: task)
+    }
+    .navigationTitle("タスク")
+    .navigationBarTitleDisplayMode(.large)
+    .toolbar {
+        ToolbarItem(placement: .topBarTrailing) {
+            Button {
+                addTask()
+            } label: {
+                Image(systemName: "plus")
+            }
+        }
+
+        ToolbarItem(placement: .topBarLeading) {
+            Button("編集") {
+                toggleEditMode()
+            }
+        }
+    }
+}
+```
+
+---
+
+### コンポーネント命名規則
+
+#### PascalCase命名規則
+
+すべてのコンポーネントファイルとSwift型は、PascalCaseに従います。
+
+**コンポーネントファイル**:
+- `PrimaryButton.swift` - プライマリボタンコンポーネント
+- `TaskCard.swift` - タスクカードコンポーネント
+- `TaskListView.swift` - タスクリストビュー
+
+**プロパティ命名規則**:
+- `taskName` - camelCaseでプロパティを命名
+- `isCompleted` - Bool型はis接頭辞
+- `onToggle` - クロージャはon接頭辞
+
+**例**:
+```swift
+struct TaskCard: View {
+    let task: Task
+    let onToggle: () -> Void
+    let onTap: () -> Void
+
+    var body: some View {
+        // 実装
+    }
+}
+```
+
+**ファイル配置**:
+```
+kajilis/
+├── Views/
+│   ├── TaskListView.swift
+│   ├── TaskDetailView.swift
+│   └── TaskFormView.swift
+├── ViewModels/
+│   ├── TaskListViewModel.swift
+│   └── TaskDetailViewModel.swift
+├── Models/
+│   ├── Task.swift
+│   └── Priority.swift
+├── Components/
+│   ├── Buttons/
+│   │   ├── PrimaryButton.swift
+│   │   └── SecondaryButton.swift
+│   └── Cards/
+│       ├── TaskCard.swift
+│       └── InfoCard.swift
+└── Services/
+    └── TaskService.swift
+```
+
+---
+
 ## レイアウトパターン
 
 <!-- このセクションは今後のタスクで実装 -->
