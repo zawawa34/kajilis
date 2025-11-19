@@ -12,6 +12,7 @@ struct kajilisApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .tint(Color.accentColor) // アプリ全体のアクセントカラーを適用
         }
     }
 }
