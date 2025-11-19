@@ -98,17 +98,28 @@ backend/
 
 ```
 ios/
-├── kajilis.xcodeproj/         # Xcodeプロジェクトファイル
-├── kajilis/                   # メインアプリケーション
-│   ├── kajilisApp.swift       # App エントリーポイント
-│   ├── ContentView.swift      # メインビュー
-│   └── Assets.xcassets/       # 画像・カラーアセット
-├── kajilisTests/              # ユニットテスト
+├── kajilis.xcodeproj/                 # Xcodeプロジェクトファイル
+├── kajilis/                           # メインアプリケーション
+│   ├── kajilisApp.swift               # App エントリーポイント (.tint適用済み)
+│   ├── ContentView.swift              # TabView構造のメインビュー
+│   ├── Views/                         # 機能別ビューファイル
+│   │   ├── Shopping/
+│   │   │   └── ShoppingListView.swift   # 買い物リスト画面
+│   │   ├── Menu/
+│   │   │   └── MenuPlanView.swift       # 献立画面
+│   │   ├── Tasks/
+│   │   │   └── TaskListView.swift       # タスク画面
+│   │   └── Settings/
+│   │       └── SettingsView.swift       # 設定画面
+│   └── Assets.xcassets/               # 画像・カラーアセット
+│       ├── AccentColor.colorset/      # アクセントカラー定義 (#FF9500)
+│       └── AppIcon.appiconset/        # アプリアイコン
+├── kajilisTests/                      # ユニットテスト
 │   └── kajilisTests.swift
-├── kajilisUITests/            # UIテスト
+├── kajilisUITests/                    # UIテスト
 │   ├── kajilisUITests.swift
 │   └── kajilisUITestsLaunchTests.swift
-└── .gitignore                 # iOS用Git除外設定
+└── .gitignore                         # iOS用Git除外設定
 ```
 
 ## Spec Driven Development 構造 (`.kiro/`)
@@ -118,6 +129,7 @@ ios/
 - `product.md`: プロダクト概要とビジネス目標
 - `tech.md`: 技術スタックとアーキテクチャ決定
 - `structure.md`: ファイル構成とコードパターン（本ファイル）
+- `design.md`: デザインシステムとUI実装ガイドライン
 
 ### 仕様ドキュメント (`specs/`)
 機能ごとの詳細な仕様（今後追加）：
@@ -155,6 +167,8 @@ specs/
 - **Structs/Classes**: PascalCase (`ContentView`, `UserProfile`)
 - **Variables/Functions**: camelCase (`userName`, `fetchData()`)
 - **Files**: PascalCase matching type name (`ContentView.swift`)
+- **Views**: 機能名 + View (`ShoppingListView`, `TaskListView`)
+- **View Components**: 要素名 + Row/Card/Button等 (`TaskRow`, `MenuCard`)
 
 ## Import/依存関係の組織化
 
@@ -215,3 +229,10 @@ import Foundation
 - Solid Queue: Active Job
 - Solid Cable: Action Cable (WebSocket)
 - すべてSQLiteベース（シンプル構成）
+
+### 8. iOS デザインシステム
+- **Apple HIG準拠**: iOSユーザーにとって直感的なUI
+- **SwiftUI標準コンポーネント**: 実装効率と保守性を重視
+- **SF Symbols**: アイコンシステム（5,000以上のシンボル利用可能）
+- **Semantic Colors**: ライト/ダークモード自動対応
+- **アクセシビリティ**: ダイナミックタイプ、VoiceOver自動対応

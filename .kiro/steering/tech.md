@@ -14,9 +14,26 @@
 - **SwiftUI**: Declarative UI framework
 - **Xcode**: Development IDE
 
+### デザインシステム
+- **ガイドライン**: Apple Human Interface Guidelines準拠
+- **カラーシステム**: iOS Semantic Colors + カスタムアクセントカラー
+  - AccentColor: #FF9500 (Light) / #FF9F0A (Dark)
+- **アイコン**: SF Symbols完全利用
+- **タイポグラフィ**: San Francisco (システムフォント)
+- **UIコンポーネント**: SwiftUI標準コンポーネント中心
+
+詳細は `.kiro/steering/design.md` を参照
+
 ### プロジェクト構成
 - **App Entry**: `kajilisApp.swift` - メインアプリケーションエントリーポイント
-- **Views**: `ContentView.swift` - SwiftUI View components
+- **Main View**: `ContentView.swift` - TabView構造のメインビュー
+- **Views/**: 機能別ビューファイル
+  - `Shopping/ShoppingListView.swift` - 買い物リスト画面
+  - `Menu/MenuPlanView.swift` - 献立画面
+  - `Tasks/TaskListView.swift` - タスク画面
+  - `Settings/SettingsView.swift` - 設定画面
+- **Assets.xcassets/**: カラーアセット、画像リソース
+  - `AccentColor.colorset/` - アプリ全体のアクセントカラー定義
 
 ## Frontend - Web
 
